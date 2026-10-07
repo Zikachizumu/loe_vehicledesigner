@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>loe_vehicledesigner — tarayıcı önizleme</title>
+<style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #111 url('bg.jpg') center / cover no-repeat; }
+    body::before { content: ""; position: fixed; inset: 0; background: radial-gradient(120% 90% at 50% 45%, #3a3d46 0, #15161b 70%); z-index: -1; }
+    body.has-bg::before { display: none; }
+    iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; }
+    .dev { position: fixed; right: 8px; top: 8px; z-index: 10; font: 12px monospace; color: #aaa; display: flex; gap: 6px; }
+    .dev button { font: inherit; padding: 4px 8px; background: #222; color: #ddd; border: 1px solid #444; border-radius: 4px; cursor: pointer; }
+</style>
+</head>
+<body>
+<iframe id="ui" src="../html/index.html" allowtransparency="true"></iframe>
+<div class="dev">
+    <button data-k="kind">yüzey: shell</button>
+    <button data-k="lang">dil: tr</button>
+    <button data-k="reopen">yeniden aç</button>
+</div>
+<script src="mock.js"></script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>loe_vehicledesigner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app" class="hidden">
+    <!-- 3B görünüm: boş alanlara yapılan tıklamalar oyuna (Lua) iletilir -->
+    <div id="viewport" class="viewport"></div>
+
+    <!-- 2B düzenleyici (Yüzeyler sekmesinden açılır) -->
+    <div id="view2d" class="view2d hidden">
+        <div class="v2-frame"><canvas id="cv2d"></canvas></div>
+    </div>
+
+    <div id="toasts" class="toasts"></div>
+    <div id="packsInfo" class="packs-info"></div>
+
+    <!-- SOL PANEL: araç çerçevesi + araca göre değişen araç paneli -->
+    <aside class="panel side left" id="left">
+        <header class="ph">
+            <div class="ph-row">
+                <span class="ph-crown" id="crown"></span>
+                <h1><span id="t1">VEHICLE</span> <em id="t2">DESIGNER</em></h1>
+            </div>
+            <div class="ph-sub"><span id="vehName" lang="en">—</span><span id="vehPlate" class="mono" lang="en">—</span></div>
+        </header>
+        <div class="sec-head"><i class="accent-bar"></i><h2 id="toolTitle" class="it"></h2></div>
+        <div class="scroll" id="toolBody"></div>
+        <footer class="pf"><button class="btn-save" id="btnSave">SAVE LIVERY</button></footer>
+    </aside>
+
+    <!-- SAĞ PANEL: katmanlar + katman özellikleri -->
+    <aside class="panel side right" id="right">
+        <header class="rh">
+            <span class="plate-chip mono" id="plateChip">—</span>
+            <div class="rh-act">
+                <button class="ib" id="btnUndo"></button>
+                <button class="ib" id="btnRedo"></button>
+                <button class="ib close" id="btnClose"></button>
+            </div>
+        </header>
+        <div class="scroll" id="rightBody">
+            <div class="sec-head"><i class="accent-bar"></i><h2 id="lblLayers">LAYERS</h2><span class="count mono" id="layerCount">0</span></div>
+            <div class="layer-list" id="layerList"></div>
+            <div class="sep"></div>
+            <h3 class="sub-head" id="lblProps">LAYER PROPERTIES</h3>
+            <div id="layerProps"></div>
+        </div>
+        <footer class="rf mono"><span id="fSize">4096 × 4096</span><span id="fSel">0 selected</span><span id="fState">Unsaved</span></footer>
+    </aside>
+
+    <!-- ALT: ipuçları, kamera, araç çubuğu -->
+    <div class="bottom" id="bottom">
+        <div class="hints" id="hints"></div>
+        <div class="cam-bar" id="camBar"></div>
+        <nav class="toolbar" id="toolbar"></nav>
+    </div>
+
+    <div class="overlay hidden" id="modal"></div>
+
+    <div class="busy hidden" id="busy">
+        <div class="busy-card">
+            <i class="spinner"></i>
+            <span id="busyText"></span>
+            <div class="busy-bar"><i id="busyFill"></i></div>
+        </div>
+    </div>
+</div>
+
+<script src="js/i18n.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/colorpicker.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

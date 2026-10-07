@@ -1,0 +1,8 @@
+_dev/bg.jpg
+.claude/
+*.bak
+__pycache__/
+tools/packbuilder/bin/
+tools/packbuilder/obj/
+tools/packbuilder/CodeWalker/
+tools/packbuilder/out/
