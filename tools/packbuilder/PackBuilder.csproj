@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>vdpack</AssemblyName>
+    <RootNamespace>LoeVdPack</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <NoWarn>$(NoWarn);CS8632;CA1416</NoWarn>
+    <!-- CodeWalker kaynağının yolu (git clone https://github.com/dexyfex/CodeWalker tools/packbuilder/CodeWalker) -->
+    <CodeWalkerDir Condition="'$(CodeWalkerDir)' == ''">$(MSBuildThisFileDirectory)CodeWalker</CodeWalkerDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(CodeWalkerDir)\CodeWalker.Core\CodeWalker.Core.csproj" />
+  </ItemGroup>
+
+  <!-- CodeWalker ve çıktı klasörleri bu projenin dosyası değil -->
+  <PropertyGroup>
+    <EnableDefaultItems>false</EnableDefaultItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="*.cs" />
+  </ItemGroup>
+
+</Project>
