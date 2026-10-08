@@ -38,7 +38,7 @@
         race: { num: '07', font: 'Anton', color: '#ffffff', outline: '#111111', size: 520, disc: true },
         stripes: { id: 'racing', c1: '#ffffff', c2: '#ff2e93', width: 1 },
         img: { recents: [] },
-        v2: { zoom: 1, ox: 0, oy: 0, xray: true, paint: true, grid: false },
+        v2: { zoom: 1, ox: 0, oy: 0, xray: 'clean', paint: true, grid: false },
         picked: null,
         saving: false,
     };

@@ -113,7 +113,7 @@ app.whenReady().then(() => {
         if (r.canceled || !r.filePaths[0]) return null;
         return { name: path.basename(r.filePaths[0]), data: fs.readFileSync(r.filePaths[0]) };
     });
-    ipcMain.handle('autosave', (e, text) => { try { fs.writeFileSync(path.join(app.getPath('userData'), 'autosave.lvs.json'), text); } catch (err) { /* yok say */ } return true; });
+    ipcMain.handle('autosave', (e, text) => { if (SMOKE) return true; try { fs.writeFileSync(path.join(app.getPath('userData'), 'autosave.lvs.json'), text); } catch (err) { /* yok say */ } return true; });
     ipcMain.handle('autoload', () => { if (SMOKE && !process.env.LVS_RESTORE) return null; try { return fs.readFileSync(path.join(app.getPath('userData'), 'autosave.lvs.json'), 'utf8'); } catch (err) { return null; } });
     ipcMain.handle('shot', async (e, name) => {
         if (!SMOKE) return false;

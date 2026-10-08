@@ -141,7 +141,7 @@
         $('#chXray') && $('#chXray').classList.toggle('on', !!sc.xray);
         $('#chSkel') && $('#chSkel').classList.toggle('on', !!S.skeletonOn);
         $('#chLbl') && $('#chLbl').classList.toggle('on', !!S.labelsOn);
-        $('#cXray').classList.toggle('on', !!S.v2.xray);
+        { const b = $('#cXray'); b.classList.toggle('on', !!S.v2.xray); b.innerHTML = '<i></i>' + (S.v2.xray === 'full' ? 'UV: DETAY' : S.v2.xray ? 'UV: TEMİZ' : 'UV: KAPALI'); }
     }
 
     // ------------------------------------------------------------------ DOSYA
@@ -240,8 +240,9 @@
                 x.fillStyle = S.mod.body; x.globalAlpha = 0.9;
                 for (const c of S.charts) x.fillRect(c.rect[0], c.rect[1], c.rect[2], c.rect[3]);
                 x.globalAlpha = 1;
+                if (VS.v2.wireFill) x.drawImage(VS.v2.wireFill, 0, 0, size, size);
                 x.drawImage(out, 0, 0);
-                if (VS.v2.wire) { x.globalAlpha = 0.9; x.drawImage(VS.v2.wire, 0, 0, size, size); x.globalAlpha = 1; }
+                if (VS.v2.wireLine) { x.globalAlpha = 0.85; x.drawImage(VS.v2.wireLine, 0, 0, size, size); x.globalAlpha = 1; }
                 x.font = '700 70px "Chakra Petch", Impact, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
                 for (const l of VS.v2.labels) { x.lineWidth = 12; x.strokeStyle = 'rgba(0,0,0,.7)'; x.strokeText(l.text, l.x, l.y); x.fillStyle = ['#38bdf8', '#ff2e93', '#34d399', '#fb923c', '#a855f7'][l.chart]; x.fillText(l.text, l.x, l.y); }
                 out = o;
@@ -436,7 +437,7 @@
 
         // 2B başlık
         $('#zIn').onclick = () => VS.v2.zoomBy(1.25); $('#zOut').onclick = () => VS.v2.zoomBy(0.8); $('#zFit').onclick = () => VS.v2.fit();
-        $('#cXray').onclick = function () { S.v2.xray = !S.v2.xray; this.classList.toggle('on', S.v2.xray); VS.v2.invalidate(); };
+        $('#cXray').onclick = function () { S.v2.xray = S.v2.xray === 'clean' ? 'full' : S.v2.xray === 'full' ? false : 'clean'; syncChips(); VS.v2.invalidate(); };
         $('#cPaint').onclick = function () { S.v2.paint = !S.v2.paint; this.classList.toggle('on', S.v2.paint); VS.v2.invalidate(); };
         $('#cGrid').onclick = function () { S.v2.grid = !S.v2.grid; this.classList.toggle('on', S.v2.grid); VS.v2.invalidate(); };
         $('#cMirror').onclick = function () { S.brush.mirror = !S.brush.mirror; this.classList.toggle('on', S.brush.mirror); VS.tools.renderOpts(); };

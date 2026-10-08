@@ -22,7 +22,7 @@
             this.ctx = canvas.getContext('2d');
             this.scale = 0.2; this.ox = 0; this.oy = 0;
             this.dirty = true;
-            this.wire = null; this.labels = [];
+            this.wireFill = this.wireLine = this.wireFull = null; this.labels = [];
             this.drag = null;
             this.hover = null;
             this.spaceDown = false;
@@ -67,48 +67,71 @@
             return [e.clientX - r.left, e.clientY - r.top];
         }
 
-        // ------------------------------------------------------------------ TEL KAFES (X-ışını)
+        // ------------------------------------------------------------------ TEL KAFES (UV)
+        // temiz mod: parça içi yumuşak dolgu (tasarımın ALTINDA) + yalnızca parça sınır çizgileri (üstünde); detay modu: tüm üçgen kenarları
         buildWire() {
-            this.wire = null; this.labels = [];
+            this.wireFill = this.wireLine = this.wireFull = null; this.labels = [];
             const sc = VS.scene;
             if (!sc || !sc.paintMeshes) return;
-            const N = 2048, k = N / S.design.size;
-            const w = document.createElement('canvas');
-            w.width = w.height = N;
-            const x = w.getContext('2d');
-            x.lineWidth = 1;
-            const acc = {};
-            const bones = sc.vd.header.bones;
+            const size = S.design.size, N = 2048, k = N / size;
             const colors = ['#38bdf8', '#ff2e93', '#34d399', '#fb923c', '#a855f7'];
-            const buckets = [[], [], [], [], []];
+            const mk = () => { const c = document.createElement('canvas'); c.width = c.height = N; return c; };
+            const fillC = mk(), lineC = mk();
+            const fx = fillC.getContext('2d'), lx = lineC.getContext('2d');
+            const acc = {}, bones = sc.vd.header.bones;
+            const tris = [];
+            const fillPaths = colors.map(() => new Path2D());
+            const lineBuckets = [[], [], [], [], []];
+            const vk = (x, y) => Math.round(x * 2) * 4099 + Math.round(y * 2);
             for (const m of sc.paintMeshes) {
                 const uv = m.geometry.attributes.uv.array, ch = m.geometry.attributes.chart.array;
-                const nt = ch.length / 3;
-                const bn = bones[m.userData.bone].n;
+                const nt = ch.length / 3, bn = bones[m.userData.bone].n;
+                const edges = new Map();
                 for (let t = 0; t < nt; t++) {
                     const c = ch[t * 3] | 0;
-                    const a = [uv[t * 6] * S.design.size * k, (1 - uv[t * 6 + 1]) * S.design.size * k];
-                    const b = [uv[t * 6 + 2] * S.design.size * k, (1 - uv[t * 6 + 3]) * S.design.size * k];
-                    const d = [uv[t * 6 + 4] * S.design.size * k, (1 - uv[t * 6 + 5]) * S.design.size * k];
-                    buckets[c].push(a, b, d);
-                    const key = c + '|' + bn;
-                    const e = acc[key] || (acc[key] = { c, bn, n: 0, sx: 0, sy: 0 });
-                    e.n++; e.sx += (a[0] + b[0] + d[0]) / 3; e.sy += (a[1] + b[1] + d[1]) / 3;
+                    const P = [];
+                    for (let q = 0; q < 3; q++) P.push(uv[t * 6 + q * 2] * size * k, (1 - uv[t * 6 + q * 2 + 1]) * size * k);
+                    tris.push([c, P[0], P[1], P[2], P[3], P[4], P[5]]);
+                    const path = fillPaths[c];
+                    path.moveTo(P[0], P[1]); path.lineTo(P[2], P[3]); path.lineTo(P[4], P[5]); path.closePath();
+                    for (let q = 0; q < 3; q++) {
+                        const x1 = P[q * 2], y1 = P[q * 2 + 1], x2 = P[((q + 1) % 3) * 2], y2 = P[((q + 1) % 3) * 2 + 1];
+                        const a1 = vk(x1, y1), b1 = vk(x2, y2);
+                        const key = a1 < b1 ? a1 * 16800000 + b1 : b1 * 16800000 + a1;
+                        const e = edges.get(key);
+                        if (e) e.n++; else edges.set(key, { n: 1, c, x1, y1, x2, y2 });
+                    }
+                    const key2 = c + '|' + bn;
+                    const e2 = acc[key2] || (acc[key2] = { c, bn, n: 0, sx: 0, sy: 0 });
+                    e2.n++; e2.sx += (P[0] + P[2] + P[4]) / 3; e2.sy += (P[1] + P[3] + P[5]) / 3;
                 }
+                for (const e of edges.values()) if (e.n === 1) lineBuckets[e.c].push(e);
             }
             for (let c = 0; c < 5; c++) {
-                x.strokeStyle = colors[c]; x.globalAlpha = 0.62;
-                x.beginPath();
-                const q = buckets[c];
-                for (let i = 0; i < q.length; i += 3) {
-                    x.moveTo(q[i][0], q[i][1]); x.lineTo(q[i + 1][0], q[i + 1][1]); x.lineTo(q[i + 2][0], q[i + 2][1]); x.closePath();
-                }
+                fx.fillStyle = colors[c]; fx.globalAlpha = 0.13; fx.fill(fillPaths[c]);
+                lx.strokeStyle = colors[c]; lx.globalAlpha = 0.9; lx.lineWidth = 1.5; lx.lineCap = 'round';
+                lx.beginPath();
+                for (const e of lineBuckets[c]) { lx.moveTo(e.x1, e.y1); lx.lineTo(e.x2, e.y2); }
+                lx.stroke();
+            }
+            this.wireFill = fillC; this.wireLine = lineC; this._tris = tris;
+            const cid = ['top', 'left', 'right', 'front', 'rear'];
+            this.labels = Object.values(acc).filter(e => e.n >= 80).map(e => ({ chart: e.c, text: partName(e.bn, cid[e.c]), x: e.sx / e.n / k, y: e.sy / e.n / k, n: e.n }));
+            this.invalidate();
+        }
+
+        // detay modu (tüm kenarlar) ihtiyaç olunca çizilir
+        ensureFull() {
+            if (this.wireFull || !this._tris) return;
+            const N = 2048, colors = ['#38bdf8', '#ff2e93', '#34d399', '#fb923c', '#a855f7'];
+            const c = document.createElement('canvas'); c.width = c.height = N;
+            const x = c.getContext('2d'); x.lineWidth = 1;
+            for (let ch = 0; ch < 5; ch++) {
+                x.strokeStyle = colors[ch]; x.globalAlpha = 0.5; x.beginPath();
+                for (const t of this._tris) if (t[0] === ch) { x.moveTo(t[1], t[2]); x.lineTo(t[3], t[4]); x.lineTo(t[5], t[6]); x.closePath(); }
                 x.stroke();
             }
-            this.wire = w;
-            const cid = ['top', 'left', 'right', 'front', 'rear'];
-            this.labels = Object.values(acc).filter(e => e.n >= 50).map(e => ({ chart: e.c, text: partName(e.bn, cid[e.c]), x: e.sx / e.n / k, y: e.sy / e.n / k, n: e.n }));
-            this.invalidate();
+            this.wireFull = c;
         }
 
         // ------------------------------------------------------------------ ÇİZİM
@@ -133,8 +156,11 @@
                     ctx.globalAlpha = 1;
                 }
             }
+            const mode = S.v2.xray;
+            if (mode && this.wireFill) ctx.drawImage(this.wireFill, 0, 0, size, size);
             if (S.v2.paint) ctx.drawImage(VS.cv, 0, 0, size, size);
-            if (S.v2.xray && this.wire) { ctx.globalAlpha = 0.95; ctx.drawImage(this.wire, 0, 0, size, size); ctx.globalAlpha = 1; }
+            if (mode === 'full') { this.ensureFull(); if (this.wireFull) ctx.drawImage(this.wireFull, 0, 0, size, size); }
+            else if (mode && this.wireLine) { ctx.globalAlpha = 0.8; ctx.drawImage(this.wireLine, 0, 0, size, size); ctx.globalAlpha = 1; }
             if (S.v2.grid) this.drawGrid(ctx, size);
             if (charts) {
                 const cols = VS3D.CHART_COLORS;
@@ -164,17 +190,20 @@
 
         drawLabels(ctx) {
             const cols = ['#38bdf8', '#ff2e93', '#34d399', '#fb923c', '#a855f7'];
-            const fs = clamp(34 / this.scale * 0.55, 26, 120);
+            const fs = clamp(15 / this.scale, 22, 80);
             ctx.font = `700 ${fs}px "Chakra Petch", Impact, sans-serif`;
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            const seen = [];
-            for (const l of this.labels.sort((a, b) => b.n - a.n)) {
-                if (seen.some(s => Math.abs(s.x - l.x) < fs * 3 && Math.abs(s.y - l.y) < fs * 1.1)) continue;
-                seen.push(l);
-                ctx.lineWidth = fs * 0.2; ctx.strokeStyle = 'rgba(0,0,0,.75)';
+            const placed = [];
+            for (const l of this.labels.slice().sort((a, b) => b.n - a.n)) {
+                const w = ctx.measureText(l.text).width + fs * 0.4, h = fs * 1.15;
+                const r = [l.x - w / 2, l.y - h / 2, l.x + w / 2, l.y + h / 2];
+                if (placed.some(p => r[0] < p[2] && r[2] > p[0] && r[1] < p[3] && r[3] > p[1])) continue;
+                placed.push(r);
+                ctx.lineWidth = fs * 0.22; ctx.strokeStyle = 'rgba(6,6,8,.85)'; ctx.lineJoin = 'round';
                 ctx.strokeText(l.text, l.x, l.y);
-                ctx.fillStyle = cols[l.chart];
+                ctx.globalAlpha = 0.9; ctx.fillStyle = cols[l.chart];
                 ctx.fillText(l.text, l.x, l.y);
+                ctx.globalAlpha = 1;
             }
         }
 
