@@ -62,7 +62,8 @@ b { color: var(--txt); font-weight: 700; }
 .panel.side::before { left: -1px; top: -1px; border-right: 0; border-bottom: 0; border-top-left-radius: .65rem; }
 .panel.side::after { right: -1px; bottom: -1px; border-left: 0; border-top: 0; border-bottom-right-radius: .65rem; }
 
-.side { top: 4.2rem; bottom: 7rem; width: 22rem; display: flex; flex-direction: column; }
+/* yükseklik içeriğe göre; yalnızca üst/alt çubuk arasındaki alanı aşınca kaydırma çıkar */
+.side { top: 4.2rem; max-height: calc(100% - 11.2rem); width: 22rem; display: flex; flex-direction: column; }
 .side.left { left: 2.8rem; }
 .side.right { right: 2.8rem; }
 #app.on .side.left { animation: inL .3s cubic-bezier(.2, .8, .2, 1) both; }
@@ -87,7 +88,7 @@ b { color: var(--txt); font-weight: 700; }
     border-radius: .22rem; padding: .08rem .32rem; background: rgba(var(--accent-rgb), .1);
 }
 
-.scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 0 1.05rem .6rem 1.3rem; margin-right: .25rem; }
+.scroll { flex: 0 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 0 1.05rem .6rem 1.3rem; margin-right: .25rem; }
 .scroll .sec-head { padding-left: 0; padding-right: 0; }
 .scroll .sec-head .accent-bar { left: 0; }
 .scroll::-webkit-scrollbar { width: .2rem; }
