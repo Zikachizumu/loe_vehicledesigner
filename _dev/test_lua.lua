@@ -38,6 +38,11 @@ AddStateBagChangeHandler = noop
 GetConvar = function(_, d) return d end
 IsPlayerAceAllowed = function() return false end
 GetResourceState = function() return 'missing' end
+GetNumResources = function() return 0 end
+GetResourceByFindIndex = function() return nil end
+GetResourceMetadata = function() return nil end
+GetNumResourceMetadata = function() return 0 end
+LoadResourceFile = function() return nil end
 GetPlayerIdentifiers = function() return { 'license:test' } end
 GetPlayerName = function() return 'test' end
 exports = setmetatable({}, { __call = noop, __index = function() return setmetatable({}, { __index = function() return noop end }) end })
@@ -153,6 +158,8 @@ a, scope = Assign.resolve('ABC123', '200')
 check(a == nil, 'plaka farklı modelde geçersiz')
 a, scope = Assign.resolve('ZZZ', '100')
 check(a and a.i == 7 and scope == 'model', 'model ataması')
+
+check(VD.LoadEquipmentPacks() == 0, 'ekipman paketi taraması (boş)')
 
 -- ------------------------------------------------------------------ döndürme
 local v = VD.rotate({ 0, 0, 90 }, { 1, 0, 0 })

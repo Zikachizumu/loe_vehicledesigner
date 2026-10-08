@@ -112,3 +112,45 @@ VD.Equipment = {
 
 VD.EquipmentById = {}
 for _, it in ipairs(VD.Equipment) do VD.EquipmentById[it.id] = it end
+
+-- Ekipman paketleri (fxmanifest: loe_vd_equipment 'equipment.json'): öğeler kataloğun başına eklenir.
+-- Hem client hem server okur (server doğrulaması paket öğelerini de tanısın diye).
+local packItems = {}
+
+local function validItem(it)
+    return type(it) == 'table' and type(it.id) == 'string' and type(it.cat) == 'string'
+        and type(it.props) == 'table' and type(it.lights) == 'table'
+end
+
+function VD.LoadEquipmentPacks()
+    -- önceki paket öğelerini çıkar
+    for id in pairs(packItems) do VD.EquipmentById[id] = nil end
+    for i = #VD.Equipment, 1, -1 do
+        if packItems[VD.Equipment[i].id] then table.remove(VD.Equipment, i) end
+    end
+    packItems = {}
+    local added = {}
+    for i = 0, GetNumResources() - 1 do
+        local res = GetResourceByFindIndex(i)
+        if res and GetResourceState(res) == 'started' then
+            for j = 0, GetNumResourceMetadata(res, 'loe_vd_equipment') - 1 do
+                local file = GetResourceMetadata(res, 'loe_vd_equipment', j)
+                local raw = file and LoadResourceFile(res, file)
+                local ok, data = pcall(json.decode, raw or '')
+                if ok and type(data) == 'table' and type(data.items) == 'table' then
+                    for _, it in ipairs(data.items) do
+                        if validItem(it) and not VD.EquipmentById[it.id] then
+                            it.colors = type(it.colors) == 'table' and it.colors or {}
+                            it.pack = res
+                            added[#added + 1] = it
+                            packItems[it.id] = true
+                            VD.EquipmentById[it.id] = it
+                        end
+                    end
+                end
+            end
+        end
+    end
+    for i = #added, 1, -1 do table.insert(VD.Equipment, 1, added[i]) end
+    return #added
+end

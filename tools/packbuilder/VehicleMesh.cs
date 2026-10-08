@@ -17,6 +17,8 @@ class VehicleMesh
     public List<int> VBone = new();
     public List<int[]> Tris = new();     // köşe indeksleri
     public List<bool> TriPaint = new();
+    public List<string> TriShader = new();
+    public List<Vector2> UV = new();
     public HashSet<string> Shaders = new();
 
     static readonly Dictionary<uint, string> ShaderNames = BuildShaderNames();
@@ -81,6 +83,17 @@ class VehicleMesh
             default:
                 return new Vector3(BitConverter.ToSingle(b, o), BitConverter.ToSingle(b, o + 4), BitConverter.ToSingle(b, o + 8));
         }
+    }
+
+    static Vector2 ReadV2(VertexData vd, int v, int c)
+    {
+        var info = vd.Info;
+        var t = info.GetComponentType(c);
+        int o = v * vd.VertexStride + info.GetComponentOffset(c);
+        var b = vd.VertexBytes;
+        if (t == VertexComponentType.Half2 || t == VertexComponentType.Half4)
+            return new Vector2((float)BitConverter.ToHalf(b, o), (float)BitConverter.ToHalf(b, o + 2));
+        return new Vector2(BitConverter.ToSingle(b, o), BitConverter.ToSingle(b, o + 4));
     }
 
     static byte[] Read4(VertexData vd, int v, int c)
@@ -159,6 +172,7 @@ class VehicleMesh
                     m.P.Add(p);
                     m.N.Add(n);
                     m.VBone.Add(bone);
+                    m.UV.Add(((flags >> 6) & 1) == 1 ? ReadV2(vd, v, 6) : Vector2.Zero);
                 }
                 var ind = g.IndexBuffer.Indices;
                 for (int i = 0; i + 2 < ind.Length; i += 3)
@@ -167,6 +181,7 @@ class VehicleMesh
                     if (a == b || b == c || a == c) continue;
                     m.Tris.Add(new[] { a, b, c });
                     m.TriPaint.Add(paint);
+                    m.TriShader.Add(sh);
                 }
             }
         }

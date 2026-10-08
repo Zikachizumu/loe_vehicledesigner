@@ -58,7 +58,7 @@ Tasarım 4096×4096'lık bir tuvalde tutulur. Araç 5 yüzeye ayrılır (Üst, S
 
 GTA vanilla araçlarında bu tuvali taşıyacak bir UV yüzeyi yoktur. Bu yüzden her model için bir **yüzey paketi** gerekir: aracın boya geometrisinin kutu izdüşümlü UV'lerle kopyalanmış bir kaplama modeli. Paket, `loe_vd_pack 'yes'` satırı olan ayrı bir resource'tur ve otomatik bulunur (alt köşede "N yüzey paketi yüklendi"). Paketler `tools/packbuilder` ile oyunun kendi modellerinden üretilir; ayrıntılar [tools/packbuilder/README.md](tools/packbuilder/README.md).
 
-LOE için hazır üretilenler: `loe_vd_pack_emergency` (30 polis / EMS / itfaiye aracı) ve `loe_vd_pack_cars` (galerideki 50 araba + gauntlet3, elegy, dominator, aleutian). Paketli araçlarda 2B düzenleyici, aracın yüzey şablonunu (silüetini) arka planda gösterir.
+LOE için hazır üretilenler: `loe_vd_pack_emergency` (30 polis / EMS / itfaiye aracı), `loe_vd_pack_cars` (galerideki 50 araba + gauntlet3, elegy, dominator, aleutian) ve `loe_vd_pack_equipment` (vanilla polis araçlarından çıkarılmış 5 tepe lambası x 4 renk; Ekipman > Sirenler kataloğunda en üstte). Paketli araçlarda 2B düzenleyici, aracın yüzey şablonunu (silüetini) arka planda gösterir.
 
 | Yüzey türü | Durum |
 |---|---|

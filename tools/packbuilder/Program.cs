@@ -15,6 +15,10 @@ try
     {
         case "build":
             return Build.Run(args);
+        case "equip":
+            return EquipBuild.Run(args);
+        case "debugbar":
+            return DebugBar.Run(args[1], args[2]);
         case "debugroof":
             return DebugRoof.Run(args[1], args[2]);
         case "verify":

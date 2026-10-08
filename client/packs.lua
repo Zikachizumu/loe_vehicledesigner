@@ -57,7 +57,8 @@ function Packs.scan()
         end
     end
     Packs.count = #Packs.list
-    VD.debug(('%d yüzey paketi, %d model'):format(Packs.count, Packs.modelCount()))
+    local eq = VD.LoadEquipmentPacks()
+    VD.debug(('%d paket, %d model, %d paket ekipmanı'):format(Packs.count, Packs.modelCount(), eq))
 end
 
 function Packs.modelCount()
@@ -94,7 +95,7 @@ function Packs.surfaceFor(veh)
 end
 
 AddEventHandler('onClientResourceStart', function(res)
-    if res == VD.Resource or GetResourceMetadata(res, 'loe_vd_pack', 0) == 'yes' then
+    if res ~= VD.Resource and GetResourceMetadata(res, 'loe_vd_pack', 0) == 'yes' then
         Packs.scan()
         if World and World.refreshAll then World.refreshAll() end
     end

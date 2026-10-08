@@ -1,6 +1,19 @@
 -- Başlatma ve yönetici komutları.
 
+-- Ekipman paketleri (lightbar vb.) doğrulamada tanınsın
+local function loadEquipment()
+    local n = VD.LoadEquipmentPacks()
+    if n > 0 then print(('[%s] %d paket ekipmanı yüklendi'):format(VD.Resource, n)) end
+end
+AddEventHandler('onResourceStart', function(res)
+    if res ~= VD.Resource and GetResourceMetadata(res, 'loe_vd_equipment', 0) then loadEquipment() end
+end)
+AddEventHandler('onResourceStop', function(res)
+    if res ~= VD.Resource and GetResourceMetadata(res, 'loe_vd_equipment', 0) then SetTimeout(200, loadEquipment) end
+end)
+
 CreateThread(function()
+    loadEquipment()
     if not DB.migrate() then return end
     Assign.load()
     -- resource yeniden başlatıldıysa bağlı oyunculara dizini tekrar gönder
