@@ -232,6 +232,16 @@ end
 -- ------------------------------------------------------------------ NUI geri çağrıları
 local function cbOk(cb) cb({ ok = true }) end
 
+-- Arayüzdeki JS hataları F8 konsoluna düşer (en çok 25 satır)
+local jsErrors = 0
+RegisterNUICallback('jsError', function(d, cb)
+    cbOk(cb)
+    jsErrors = jsErrors + 1
+    if jsErrors <= 25 then
+        print(('^1[loe_vehicledesigner] NUI hatası: %s (%s:%s)^7'):format(tostring(d.m), tostring(d.f), tostring(d.l)))
+    end
+end)
+
 RegisterNUICallback('nuiReady', function(_, cb) cbOk(cb) end)
 RegisterNUICallback('tool', function(_, cb) cbOk(cb) end)
 RegisterNUICallback('select', function(_, cb) cbOk(cb) end)

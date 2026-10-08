@@ -12,6 +12,7 @@ Backends = {}
 -- ================================================================== ORTAK: model + tasarım anahtarı başına paylaşılan doku
 local shared = {}      -- [kindKey][designKey] = { slot, dui, refs }
 local slotUse = {}     -- [model hash] = { [slot] = true }
+local warnedModels = {}
 
 local function texSize()
     local n = Config.Canvas.texture or 2048
@@ -83,6 +84,11 @@ local function spawnParts(veh, pack, slot, extras)
             local extraId = part.bone and tonumber(part.bone:match('^extra_(%d+)$'))
             if extraId and extras then extras[obj] = extraId end
         else
+            -- paket akışa katılmamış (ör. gen8 dosyalar Enhanced'de yüklenmez) → F8'de bir kez uyar
+            if not warnedModels[pack.hash or pack.model] then
+                warnedModels[pack.hash or pack.model] = true
+                print(('^3[loe_vehicledesigner] kaplama modeli yüklenemedi: %s (paket resource çalışıyor mu? dosyalar stream_enhanced içinde mi?)^7'):format(name))
+            end
             VD.debug('kaplama modeli bulunamadı: ' .. name)
         end
     end

@@ -110,14 +110,21 @@ function VD.rayPointDist(from, dir, p)
     return #(p - c), t
 end
 
+local warnedLoad = {}
+local function warnLoad(model, why)
+    if warnedLoad[model] then return end
+    warnedLoad[model] = true
+    print(('^3[loe_vehicledesigner] model yüklenemedi: %s (%s)^7'):format(tostring(model), why))
+end
+
 function VD.loadModel(model)
     local hash = type(model) == 'number' and model or joaat(model)
-    if not IsModelInCdimage(hash) then return nil end
+    if not IsModelInCdimage(hash) then warnLoad(model, 'oyunda tanımlı değil') return nil end
     if HasModelLoaded(hash) then return hash end
     RequestModel(hash)
     local t = GetGameTimer() + 5000
     while not HasModelLoaded(hash) do
-        if GetGameTimer() > t then return nil end
+        if GetGameTimer() > t then warnLoad(model, 'zaman aşımı') return nil end
         Wait(0)
     end
     return hash

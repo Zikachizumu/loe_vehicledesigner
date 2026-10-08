@@ -87,6 +87,12 @@
         }
     }
 
+    // Yakalanmayan JS hataları oyun konsoluna (F8) iletilir
+    if (IS_GAME) {
+        window.addEventListener('error', e => { post('jsError', { m: String(e.message), f: String(e.filename || '').split('/').pop(), l: e.lineno }); });
+        window.addEventListener('unhandledrejection', e => { post('jsError', { m: String((e.reason && e.reason.message) || e.reason) }); });
+    }
+
     // Canlı önizleme: tasarım/ekipman/modifiye değişiklikleri sık gelir → kısılır
     function throttled(name, build, ms) {
         let timer = null, last = 0;
