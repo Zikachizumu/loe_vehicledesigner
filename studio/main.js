@@ -43,6 +43,7 @@ function createWindow() {
         },
     });
     win.removeMenu();
+    if (!SMOKE) win.maximize();
     win.loadURL('loe://studio/web/index.html');
     win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: 'deny' }; });
     win.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('loe://')) e.preventDefault(); });
@@ -56,7 +57,7 @@ function createWindow() {
         const logs = [];
         const NL = String.fromCharCode(10);
         const flush = (extra) => { try { fs.writeFileSync(SMOKE + '.log', (extra || '') + NL + logs.join(NL)); } catch (e) { /* yok say */ } };
-        win.webContents.on('console-message', (e, level, msg, line, src) => logs.push(`[${level}] ${msg} (${path.basename(src || '')}:${line})`));
+        win.webContents.on('console-message', (e) => logs.push(`[${e.level}] ${e.message} (${path.basename(e.sourceId || '')}:${e.lineNumber})`));
         win.webContents.on('did-fail-load', (e, code, desc, url) => logs.push(`did-fail-load ${code} ${desc} ${url}`));
         win.webContents.on('render-process-gone', (e, d) => logs.push('render-process-gone ' + JSON.stringify(d)));
         flush('basladi');
@@ -84,6 +85,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+    app.setAppUserModelId('LOE.VehicleStudio');
     protocol.handle('loe', (req) => {
         const u = new URL(req.url);
         const rel = decodeURIComponent(u.pathname).replace(/^\/+/, '');
@@ -113,6 +115,13 @@ app.whenReady().then(() => {
     });
     ipcMain.handle('autosave', (e, text) => { try { fs.writeFileSync(path.join(app.getPath('userData'), 'autosave.lvs.json'), text); } catch (err) { /* yok say */ } return true; });
     ipcMain.handle('autoload', () => { if (SMOKE && !process.env.LVS_RESTORE) return null; try { return fs.readFileSync(path.join(app.getPath('userData'), 'autosave.lvs.json'), 'utf8'); } catch (err) { return null; } });
+    ipcMain.handle('shot', async (e, name) => {
+        if (!SMOKE) return false;
+        await new Promise(r => setTimeout(r, 400));
+        const img = await win.webContents.capturePage();
+        fs.writeFileSync(SMOKE.replace(/\.png$/, '') + '_' + String(name).replace(/[^\w-]/g, '') + '.png', img.toPNG());
+        return true;
+    });
     ipcMain.handle('app-info', () => ({ version: app.getVersion(), electron: process.versions.electron }));
     createWindow();
 });

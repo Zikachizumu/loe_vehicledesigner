@@ -20,6 +20,7 @@
         { id: 'stripes', icon: 'stripes', tr: 'Şerit', key: 'L' },
         { id: 'racenum', icon: 'hash', tr: 'Numara', key: 'N', place: true },
         { id: 'pattern', icon: 'pattern', tr: 'Desen', key: 'D', place: true },
+        { id: 'prop', icon: 'siren', tr: 'Aksesuar', key: 'O' },
         { id: 'presets', icon: 'layout', tr: 'Şablon', key: 'P' },
         { id: 'picker', icon: 'pipette', tr: 'Damlalık', key: 'K' },
     ];
@@ -281,6 +282,7 @@
         const id = S.tool, def = byId[id];
         if (def && def.paint) { if (p.chart) beginStroke(p.x, p.y, p.chart); else beginStroke(p.x, p.y, null); return; }
         if (id === 'picker') { pickColor(p.x, p.y); return; }
+        if (id === 'prop') { VS.toast('Aksesuarı yerleştirmek için araç (3B) üzerinde tıkla', 'err'); return; }
         if (def && def.place) { T.place(p.x, p.y, p.chart); }
     };
     T.move2d = function (p) { if (st) strokeTo(p.x, p.y, p.chart); };
@@ -301,6 +303,7 @@
                 if (hit && hit.chart) { beginStroke(hit.px, hit.py, chartOf(hit.chart)); drag3 = { k: 'stroke' }; return true; }
                 return false;
             }
+            if (id === 'prop') { if (hit && hit.point) { VS.addPropAt(S.propType, hit); return true; } return false; }
             if (id === 'picker') { if (hit && hit.chart) { pickColor(hit.px, hit.py); return true; } return false; }
             if (def && def.place) { if (hit && hit.chart) { T.place(hit.px, hit.py, hit.chart); return true; } return false; }
             if (id === 'select') {
@@ -416,8 +419,8 @@
                 colorField('Renk', t.color, c => { t.color = c; }),
                 h('div', { class: 'row', style: { marginTop: '6px' } },
                     h('button', { class: 'btn' + (t.bold ? ' on' : ''), text: 'B', style: { fontWeight: 900 }, onclick: function () { t.bold = !t.bold; this.classList.toggle('on', t.bold); } }),
-                    h('button', { class: 'btn' + (t.italic ? ' on' : ''), text: 'I', style: { fontStyle: 'italic' }, onclick: function () { t.italic = !t.italic; this.classList.toggle('on', t.italic); } }),
-                    seg([['left', 'Sol'], ['center', 'Orta'], ['right', 'Sağ']], t.align, v => { t.align = v; })));
+                    h('button', { class: 'btn' + (t.italic ? ' on' : ''), text: 'I', style: { fontStyle: 'italic' }, onclick: function () { t.italic = !t.italic; this.classList.toggle('on', t.italic); } })),
+                h('div', { style: { marginTop: '6px' } }, seg([['left', 'Sol'], ['center', 'Orta'], ['right', 'Sağ']], t.align, v => { t.align = v; })));
             chartButtons(b);
             b.append(h('div', { class: 'card-note', style: { marginTop: '8px', fontSize: '10.5px', color: 'var(--dim)' }, text: 'Ya da araca / tuvale tıklayarak yerleştir.' }));
         },
@@ -518,10 +521,78 @@
             b.append(list);
         },
 
+        prop(b) {
+            b.append(lbl('Aksesuar türü'));
+            const g = h('div', { class: 'tpl' });
+            for (const t of VSProps.TYPES) {
+                const btn = h('button', { class: S.propType === t.id ? 'on' : '', html: icon(t.icon) + `<span>${esc(t.label)}</span>` });
+                btn.style.cssText = S.propType === t.id ? 'border-color:var(--accent);color:#fff' : '';
+                btn.addEventListener('click', () => { S.propType = t.id; T.renderOpts(); });
+                g.append(btn);
+            }
+            b.append(g);
+            b.append(lbl('Hızlı yerleştir'));
+            b.append(h('div', { class: 'grid2' },
+                h('button', { class: 'btn sm', text: 'Tavan', onclick: () => VS.addPropAtSpot('roof') }),
+                h('button', { class: 'btn sm', text: 'Kaput', onclick: () => VS.addPropAtSpot('hood') }),
+                h('button', { class: 'btn sm', text: 'Bagaj', onclick: () => VS.addPropAtSpot('trunk') }),
+                h('button', { class: 'btn sm', text: 'Ön tampon', onclick: () => VS.addPropAtSpot('front') })));
+            b.append(h('div', { class: 'card-note', style: { marginTop: '8px', fontSize: '10.5px', color: 'var(--dim)', lineHeight: '1.5' }, text: 'Araca tıkla: aksesuar tıklanan parçaya (kapı, kaput…) bağlanır ve onunla hareket eder. Ayrıntılar MODİFİYE sekmesinde.' }));
+        },
+
         picker(b) {
             b.append(h('div', { class: 'card-note', style: { fontSize: '11px', color: 'var(--mut)', lineHeight: '1.6' }, text: 'Araca ya da tuvale tıkla; o noktanın rengi fırçaya, metne ve şekle atanır.' }));
             if (S.picked) b.append(colorField('Son alınan', S.picked, () => { }));
         },
+    };
+
+    // ------------------------------------------------------------------ AKSESUARLAR
+    const PROP_DEF_COL = { lightbar: ['#ff1f3d', '#2f6bff'], lightbar_mini: ['#ff1f3d', '#2f6bff'], beacon: ['#ff9a1a', '#ff9a1a'], spot: ['#fff3d6', '#fff3d6'], antenna: ['#222428', '#222428'],
+        spoiler: ['#15161a', '#15161a'], roofbox: ['#1b1d22', '#1b1d22'], bullbar: ['#9aa0a8', '#9aa0a8'], rack: ['#2a2c31', '#2a2c31'] };
+
+    // hit: { point (dünya), normal (dünya), bone }
+    VS.addPropAt = function (typeId, hit) {
+        const sc = VS.scene, t = VSProps.byId[typeId];
+        if (!t || !sc.vd) return null;
+        const bone = hit.bone, grp = sc.boneGroups[bone];
+        grp.updateWorldMatrix(true, false);
+        const lp = grp.worldToLocal(hit.point.clone());
+        const inv = new THREE.Matrix4().copy(grp.matrixWorld).invert();
+        let n = (hit.normal || new THREE.Vector3(0, 1, 0)).clone().transformDirection(inv);
+        if (t.align === 'up') n = new THREE.Vector3(0, 0, 1);           // anten / bullbar: yüzey eğimini izlemez
+        const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), n);
+        const e = new THREE.Euler().setFromQuaternion(q, 'XYZ');
+        const D = 180 / Math.PI;
+        const cols = PROP_DEF_COL[typeId] || ['#222428', '#222428'];
+        const rec = {
+            id: E.uid('p'), type: typeId, name: t.label, bone: sc.vd.header.bones[bone].n,
+            pos: [lp.x + n.x * 0.004, lp.y + n.y * 0.004, lp.z + n.z * 0.004].map(v => Math.round(v * 1000) / 1000),
+            rot: [e.x * D, e.y * D, e.z * D].map(v => Math.round(v * 10) / 10), s: 1, color: cols[0], color2: cols[1],
+        };
+        S.mod.props.push(rec);
+        sc.addProp(rec);
+        S.selProp = rec.id;
+        VS.commit();
+        if (S.tab === 'paint') VS.renderPanel();
+        VS.toast(t.label + ' eklendi — MODİFİYE sekmesinden ayarla', 'ok');
+        return rec;
+    };
+
+    // Hazır noktalar: araç uzayında x-y noktasından aşağı ışın
+    VS.addPropAtSpot = function (spot) {
+        const sc = VS.scene, bb = sc.bbox;
+        if (!sc.vd) return;
+        const cx = (bb.min[0] + bb.max[0]) / 2, L = bb.max[1] - bb.min[1];
+        const y = { roof: bb.min[1] + L * 0.46, hood: bb.min[1] + L * 0.8, trunk: bb.min[1] + L * 0.14, front: bb.max[1] - 0.05 }[spot];
+        let hit;
+        if (spot === 'front') {
+            // ön tampon: önden geriye doğru yatay ışın
+            const hei = bb.max[2] - bb.min[2];
+            hit = sc.surfaceFront(cx, bb.min[2] + hei * 0.22);
+            if (hit) { hit.point.add(new THREE.Vector3(0, 0, 0)); }
+        } else hit = sc.surfaceAt(cx, y);
+        if (!hit) { VS.toast('Bu noktada yüzey bulunamadı', 'err'); return; }
+        VS.addPropAt(S.propType, hit);
     };
 
     // ------------------------------------------------------------------ ŞERİTLER

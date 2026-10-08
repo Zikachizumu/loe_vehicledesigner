@@ -5,7 +5,7 @@
     const { $, $$, clamp, esc, ui } = VS;
     const { h } = ui;
     const DATA = '../data/vehicles/';
-    const bridge = window.loe || null;     // Electron preload
+    VS.bridge = window.loe || null;        // Electron preload (sınamalarda null yapılabilir)
 
     // ------------------------------------------------------------------ DURUM / İPUCU
     VS.updateStatus = function () {
@@ -37,7 +37,7 @@
             const vd = await VSVehicle.load(DATA + id + '.lvm.gz');
             S.veh = info; S.vd = vd; S.bbox = vd.header.bbox;
             S.charts = L2.compute(S.bbox.min, S.bbox.max, S.design.size);
-            S.mod.parts = {}; S.mod.hidden = []; S.mod.open = {}; S.mod.extras = {};
+            S.mod.parts = {}; S.mod.hidden = []; S.mod.open = {}; S.mod.extras = {}; S.mod.props = []; S.selProp = null;
             S.selBone = -1; S.boneOpen = {};
             vd.header.bones.forEach((b, i) => { if (b.p < 0 || b.p >= vd.header.bones.length || b.p === i || b.p === 0) S.boneOpen[i] = true; });
             VS.scene.setVehicle(vd, S.charts, S.design.size);
@@ -146,9 +146,9 @@
 
     // ------------------------------------------------------------------ DOSYA
     VS.saveBlob = async function (blob, name, filters) {
-        if (bridge && bridge.saveFile) {
+        if (VS.bridge && VS.bridge.saveFile) {
             const buf = await blob.arrayBuffer();
-            const r = await bridge.saveFile(name, buf, filters);
+            const r = await VS.bridge.saveFile(name, buf, filters);
             if (r) VS.toast('Kaydedildi: ' + r, 'ok');
             return r;
         }
@@ -174,8 +174,8 @@
 
     VS.openProject = async function () {
         let text = null;
-        if (bridge && bridge.openFile) {
-            const r = await bridge.openFile([{ name: 'LOE Vehicle Studio projesi', extensions: ['lvs', 'json'] }]);
+        if (VS.bridge && VS.bridge.openFile) {
+            const r = await VS.bridge.openFile([{ name: 'LOE Vehicle Studio projesi', extensions: ['lvs', 'json'] }]);
             if (!r) return;
             text = new TextDecoder().decode(r.data);
         } else {
@@ -241,9 +241,9 @@
                 for (const c of S.charts) x.fillRect(c.rect[0], c.rect[1], c.rect[2], c.rect[3]);
                 x.globalAlpha = 1;
                 x.drawImage(out, 0, 0);
-                if (S.v2.wire) { x.globalAlpha = 0.9; x.drawImage(S.v2.wire, 0, 0, size, size); x.globalAlpha = 1; }
+                if (VS.v2.wire) { x.globalAlpha = 0.9; x.drawImage(VS.v2.wire, 0, 0, size, size); x.globalAlpha = 1; }
                 x.font = '700 70px "Chakra Petch", Impact, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
-                for (const l of S.v2.labels) { x.lineWidth = 12; x.strokeStyle = 'rgba(0,0,0,.7)'; x.strokeText(l.text, l.x, l.y); x.fillStyle = ['#38bdf8', '#ff2e93', '#34d399', '#fb923c', '#a855f7'][l.chart]; x.fillText(l.text, l.x, l.y); }
+                for (const l of VS.v2.labels) { x.lineWidth = 12; x.strokeStyle = 'rgba(0,0,0,.7)'; x.strokeText(l.text, l.x, l.y); x.fillStyle = ['#38bdf8', '#ff2e93', '#34d399', '#fb923c', '#a855f7'][l.chart]; x.fillText(l.text, l.x, l.y); }
                 out = o;
             }
             await VS.saveBlob(await toBlob(out), `${safe(S.projName)}_${S.veh.id}_${withWire ? 'sablon' : 'tasarim'}.png`, [{ name: 'PNG', extensions: ['png'] }]);
@@ -263,8 +263,8 @@
                 o.getContext('2d').drawImage(full, x, y, w, hh, 0, 0, w, hh);
                 files.push({ name: `${safe(S.projName)}_${S.veh.id}_${c.id}.png`, blob: await toBlob(o) });
             }
-            if (bridge && bridge.saveFiles) {
-                const r = await bridge.saveFiles(await Promise.all(files.map(async f => ({ name: f.name, data: await f.blob.arrayBuffer() }))));
+            if (VS.bridge && VS.bridge.saveFiles) {
+                const r = await VS.bridge.saveFiles(await Promise.all(files.map(async f => ({ name: f.name, data: await f.blob.arrayBuffer() }))));
                 if (r) VS.toast('5 dosya kaydedildi: ' + r, 'ok');
             } else for (const f of files) await VS.saveBlob(f.blob, f.name);
         } finally { VS.busy(null); }
@@ -290,21 +290,28 @@
             for (const m of sc.meshes) {
                 if (!m.visible) continue;
                 const g = m.geometry, pos = g.attributes.position, nor = g.attributes.normal, uv = g.attributes.uv;
-                const off = [-m.position.x, -m.position.y, -m.position.z];  // mesh.position = −pivot → model uzayı = konum + pivot
                 const cls = ['paint', 'glass', 'metal', 'tire', 'light', 'interior', 'detail', 'other'][m.userData.cls];
                 lines.push(`o ${bones[m.userData.bone].n}_${cls}`);
-                const n = pos.count;
-                for (let i = 0; i < n; i++) lines.push(`v ${f3(pos.getX(i))} ${f3(pos.getY(i))} ${f3(pos.getZ(i))}`);
-                for (let i = 0; i < n; i++) lines.push(`vn ${f3(nor.getX(i))} ${f3(nor.getY(i))} ${f3(nor.getZ(i))}`);
-                if (uv) for (let i = 0; i < n; i++) lines.push(`vt ${f3(uv.getX(i))} ${f3(uv.getY(i))}`);
+                // yalnızca kullanılan köşeleri yaz (paylaşılan öznitelikler tüm aracı içerir)
                 const idx = g.index ? g.index.array : null;
-                const cnt = idx ? idx.length : n;
+                const used = new Map(), order = [];
+                const cnt = idx ? idx.length : pos.count;
+                const tri = new Array(cnt);
+                for (let i = 0; i < cnt; i++) {
+                    const k = idx ? idx[i] : i;
+                    let r = used.get(k);
+                    if (r === undefined) { r = order.length; used.set(k, r); order.push(k); }
+                    tri[i] = r;
+                }
+                for (const i of order) lines.push(`v ${f3(pos.getX(i))} ${f3(pos.getY(i))} ${f3(pos.getZ(i))}`);
+                for (const i of order) lines.push(`vn ${f3(nor.getX(i))} ${f3(nor.getY(i))} ${f3(nor.getZ(i))}`);
+                if (uv) for (const i of order) lines.push(`vt ${f3(uv.getX(i))} ${f3(uv.getY(i))}`);
                 for (let i = 0; i + 2 < cnt; i += 3) {
-                    const a = idx ? idx[i] : i, b = idx ? idx[i + 1] : i + 1, c = idx ? idx[i + 2] : i + 2;
+                    const a = tri[i], b = tri[i + 1], c = tri[i + 2];
                     if (uv) lines.push(`f ${vo + a}/${to + a}/${no + a} ${vo + b}/${to + b}/${no + b} ${vo + c}/${to + c}/${no + c}`);
                     else lines.push(`f ${vo + a}//${no + a} ${vo + b}//${no + b} ${vo + c}//${no + c}`);
                 }
-                vo += n; no += n; if (uv) to += n;
+                vo += order.length; no += order.length; if (uv) to += order.length;
             }
             await VS.saveBlob(new Blob([lines.join('\n')], { type: 'text/plain' }), `${S.veh.id}.obj`, [{ name: 'Wavefront OBJ', extensions: ['obj'] }]);
         } finally { VS.busy(null); }
@@ -380,7 +387,7 @@
         if (!S.ready || !S.dirty) return;
         const p = VS.project(false);
         const txt = JSON.stringify(p);
-        if (bridge && bridge.autosave) bridge.autosave(txt);
+        if (VS.bridge && VS.bridge.autosave) VS.bridge.autosave(txt);
         else try { localStorage.setItem('lvs_auto', txt.length < 4.5e6 ? txt : ''); } catch (e) { /* yok say */ }
     }
     setInterval(autosave, 20000);
@@ -460,8 +467,8 @@
 
         // son oturumu geri yükle
         let auto = null;
-        try { auto = bridge && bridge.autoload ? await bridge.autoload() : localStorage.getItem('lvs_auto'); } catch (e) { /* yok say */ }
-        if (auto) { try { const p = JSON.parse(auto); if (p && p.app === 'loe-vehicle-studio' && p.design && p.design.layers && p.design.layers.length) await VS.loadProjectText(auto); } catch (e) { /* yok say */ } }
+        try { auto = VS.bridge && VS.bridge.autoload ? await VS.bridge.autoload() : localStorage.getItem('lvs_auto'); } catch (e) { /* yok say */ }
+        if (auto) { try { const p = JSON.parse(auto); if (p && p.app === 'loe-vehicle-studio' && p.design && p.design.layers && p.design.layers.length) { await VS.loadProjectText(auto); VS.toast('Son oturum geri yüklendi (' + (p.name || 'proje') + ')', 'ok'); } } catch (e) { /* yok say */ } }
 
         VS.tools.set('select');
         VS.resetHistory();

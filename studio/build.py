@@ -77,7 +77,7 @@ Başlatmak için:  "LOE Vehicle Studio.exe"  (ya da masaüstündeki kısayol)
 * 937 vanilla GTA V aracını 3B görüntüler; iskelet (kemik) hiyerarşisini gösterir.
 * Garaj sekmesinden araç seç. İSKELET sekmesinde kemikleri aç/kapat, kapı-kaput-bagaj aç, parçayı gizle ya da ayrı boya.
 * MODİFİYE sekmesi: gövde boyası, cam filmi, jant, neon, ekstralar.
-* Araçlar (soldaki çubuk): fırça, silgi, parmak, bulanık, görsel, metin, şekil, doldur, degrade, şerit, numara, desen, şablon, damlalık.
+* Araçlar (soldaki çubuk): fırça, silgi, parmak, bulanık, görsel, metin, şekil, doldur, degrade, şerit, numara, desen, aksesuar (tepe lambası, çakar, spoiler…), şablon, damlalık.
 * Dışa aktar: tasarım PNG (4096), UV şablonu, yüzey başına PNG, OBJ, 3B görüntü; proje dosyası (.lvs).
 * Projeler varsayılan olarak  Belgeler\LOE Vehicle Studio  klasörüne kaydedilir. Çalışma 20 sn'de bir otomatik yedeklenir.
 

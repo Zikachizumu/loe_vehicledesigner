@@ -37,7 +37,7 @@ b { color: var(--txt); font-weight: 700; }
 /* ============================================================ DÜZEN */
 #app {
     position: fixed; inset: 0; display: grid;
-    grid-template-columns: 62px minmax(300px, 1fr) minmax(300px, 1fr) 340px;
+    grid-template-columns: 62px minmax(360px, 1.12fr) minmax(320px, 1fr) 340px;
     grid-template-rows: 52px 1fr 26px;
     grid-template-areas: "top top top top" "rail v3 v2 side" "stat stat stat stat";
     background: radial-gradient(1200px 600px at 40% -10%, rgba(var(--accent-rgb), .07), transparent 60%), var(--bg);

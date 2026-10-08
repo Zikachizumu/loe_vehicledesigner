@@ -1,0 +1,47 @@
+# LOE Vehicle Studio
+
+Legends of Empire için bağımsız Windows uygulaması (Electron). GTA V'in 937 vanilla aracını 3B gösterir; kemik
+(iskelet) hiyerarşisini, X-ışınını (UV tel kafes), kapı/kaput/bagaj hareketini, parça gizleme/boyama ve livery tasarımını
+sunar. Oyun/FiveM gerekmez.
+
+## Çalıştırma
+
+`build.py` çıktısı `Masaüstü\LOE Vehicle Studio\LOE Vehicle Studio.exe`. Bu exe, **resmî Electron çalışma zamanının
+değiştirilmemiş kopyasıdır** (yalnızca yeniden adlandırılır). Windows **Akıllı Uygulama Denetimi** imzasız/yerel
+derlenmiş exe'leri engeller; bilinen resmî Electron özeti engellenmez. Bu yüzden exe'ye ikon/sürüm kaynağı **eklenmez**
+(özet değişir, engellenir). Uygulama kodu `resources/app` içinde düz JavaScript'tir.
+
+```bash
+python studio/build.py              # Masaüstü\LOE Vehicle Studio (tam paket)
+python studio/build.py --app-only   # yalnızca uygulama dosyalarını yenile (hızlı)
+```
+
+Önkoşul: `studio/dist/electron` içine Electron win32-x64 zip'i açılmış olmalı
+(<https://github.com/electron/electron/releases>), ve `studio/data/vehicles` dolu olmalı (aşağıda).
+
+## Araç verisi (`studio/data/vehicles/*.lvm.gz`) — repoda yok (Rockstar varlığı)
+
+```bash
+# 1) Windows, GTA V kurulu PC: tüm araç yft'lerini çıkar (Enhanced exe'si varsa onun anahtarlarıyla)
+python -I tools/packbuilder/extract_yft.py "D:/.../Grand Theft Auto V" out/yft_all tools/packbuilder/CodeWalker/CodeWalker.Core/Resources/magic.dat --all
+#    Legacy kurulumda taslak (1 KB) kalan Enhanced-özel araçlar için Enhanced klasörüyle ayrıca çıkarıp yft_all içine kopyalayın
+# 2) Linux (VPS/WSL): .lvm.gz üret  (Smart App Control yerel derlenmiş dll'leri engellediği için Linux'ta)
+vdpack mesh3d --yft yft_all --out m_all --all
+# 3) m_all içeriğini studio/data/vehicles/ altına koy
+```
+
+## Sınama
+
+`tools/smoke.sh <png> <senaryo.js>` paketlenmiş uygulamayı açar, senaryoyu sayfada çalıştırır, ekran görüntüsü alır.
+`tools/selftest.js` uçtan uca 45+ kontrol yapar (fırça, geri al/yinele, şablonlar, dışa aktarma, proje kaydet/aç, 12 araç türü).
+
+## Dosyalar
+
+| Yol | İş |
+|---|---|
+| `main.js`, `preload.js` | Electron kabuğu, `loe://` protokolü, dosya diyalogları, otomatik yedek |
+| `web/js/scene3d.js` | three.js sahnesi: araç, kemik grupları, X-ışını, iskelet, aksesuar, seçim |
+| `web/js/vehicle.js` | `.lvm.gz` okuyucu, kemik rolleri, sınıflandırma |
+| `web/js/layout.js` | Kutu izdüşümlü tuval yerleşimi (oyun içi `shared/layout.lua` ile aynı) |
+| `web/js/engine.js` | Katman çizim motoru (şekil, metin, görsel, degrade, desen, raster boya) |
+| `web/js/editor2d.js`, `tools.js`, `panels.js`, `main.js` | 2B tuval, araçlar, paneller, dosya/dışa aktarma |

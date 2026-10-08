@@ -84,6 +84,7 @@
             const loop = () => {
                 requestAnimationFrame(loop);
                 if (this.controls.autoRotate) { this.controls.update(); this.dirty = true; }
+                if (this.propTest && this.propObjs && this.propObjs.size) { this.flashProps(); this.dirty = true; }
                 if (!this.dirty) return;
                 this.dirty = false;
                 this.updateSkeleton();
@@ -275,6 +276,7 @@
                 if (o.geometry && !o.userData.sharedGeo) o.geometry.dispose();
             });
             this.root.clear();
+            this.propObjs = new Map();
             for (const m of this.ownedMats || []) m.dispose();
             this.ownedMats = [];
             this.vd = null;
@@ -290,6 +292,7 @@
             this.open = {};
             this.boneColors = {};
             this.boneMats = {};
+            this.propObjs = new Map();
             this.selBone = -1;
             this.hoverBone = -1;
             const H = vd.header, bones = H.bones, nb = bones.length;
@@ -557,7 +560,7 @@
             const c = this.center;
             const dir = {
                 iso: [0.62, 0.30, 0.72], front: [0, 0.07, -1], rear: [0, 0.07, 1],
-                left: [-1, 0.05, 0], right: [1, 0.05, 0], top: [0.001, 1, 0.001],
+                left: [-1, 0.05, 0], right: [1, 0.05, 0], top: [0, 1, 0.02],
             }[name] || [0.62, 0.3, 0.72];
             const l = Math.hypot(dir[0], dir[1], dir[2]);
             const k = (name === 'top' ? d * 1.02 : d) / l;
@@ -732,6 +735,8 @@
         // ------------------------------------------------------------------ seçim (ışın)
         pick(clientX, clientY, paintOnly) {
             if (!this.vd) return null;
+            this.scene.updateMatrixWorld(true);       // kapı/kemik animasyonu sonrası güncel matrisler
+            this.camera.updateMatrixWorld(true);
             const rect = this.renderer.domElement.getBoundingClientRect();
             const ndc = new T.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
             this.raycaster.setFromCamera(ndc, this.camera);
@@ -741,6 +746,7 @@
                 const m = h.object;
                 if (m.userData.cls === CLASS.GLASS && !paintOnly) continue;
                 const res = { bone: m.userData.bone, cls: m.userData.cls, point: h.point };
+                if (h.face) res.normal = h.face.normal.clone().transformDirection(m.matrixWorld);
                 if (m.userData.cls === CLASS.PAINT && h.uv) {
                     res.px = h.uv.x * this.size;
                     res.py = (1 - h.uv.y) * this.size;
@@ -757,6 +763,87 @@
         toLocal(point) {
             const p = this.root.worldToLocal(point.clone());
             return [p.x, p.y, p.z];
+        }
+
+        // ------------------------------------------------------------------ aksesuarlar (prop)
+        propParent(rec) {
+            const i = this.vd.header.bones.findIndex(b => b.n === rec.bone);
+            return i >= 0 ? this.boneGroups[i] : this.root;
+        }
+
+        addProp(rec) {
+            if (!this.vd) return null;
+            this.removeProp(rec.id);
+            const obj = VSProps.build(rec);
+            obj.position.set(rec.pos[0], rec.pos[1], rec.pos[2]);
+            obj.rotation.set(rec.rot[0] * Math.PI / 180, rec.rot[1] * Math.PI / 180, rec.rot[2] * Math.PI / 180, 'XYZ');
+            obj.scale.setScalar(rec.s || 1);
+            obj.traverse(o => { if (o.isMesh) o.userData.propId = rec.id; });
+            this.propParent(rec).add(obj);
+            this.propObjs.set(rec.id, obj);
+            this.invalidate();
+            return obj;
+        }
+
+        removeProp(id) {
+            const o = this.propObjs && this.propObjs.get(id);
+            if (o) {
+                o.parent && o.parent.remove(o);
+                o.traverse(m => { if (m.isMesh) { m.geometry.dispose(); const ms = Array.isArray(m.material) ? m.material : [m.material]; ms.forEach(x => x.dispose()); } });
+                this.propObjs.delete(id);
+                this.invalidate();
+            }
+        }
+
+        clearProps() { for (const id of [...this.propObjs.keys()]) this.removeProp(id); }
+
+        setPropTest(on) {
+            this.propTest = !!on;
+            if (!on) this.flashProps(true);
+            this.invalidate();
+        }
+
+        // ışık testi: soldaki/sağdaki camlar sırayla yanıp söner
+        flashProps(reset) {
+            const ph = Math.floor(performance.now() / 150) % 4;
+            this.propObjs.forEach(obj => obj.traverse(m => {
+                if (!m.isMesh || m.userData.lens === undefined) return;
+                const base = 0.55;
+                if (reset) { m.material.emissiveIntensity = base; return; }
+                const on = (m.userData.lens === 0) ? (ph === 0 || ph === 1) : (ph === 2 || ph === 3);
+                m.material.emissiveIntensity = on ? 3.4 : 0.12;
+            }));
+        }
+
+        // Araç uzayında (x, y) noktasının üstünden aşağı ışın: tavan/kaput yüzeyi
+        surfaceAt(x, y) {
+            if (!this.vd) return null;
+            this.scene.updateMatrixWorld(true);
+            const bb = this.bbox;
+            const o = new T.Vector3(x, y, bb.max[2] + 1.5);
+            const w = this.root.localToWorld(o.clone());
+            const dir = this.root.localToWorld(new T.Vector3(x, y, bb.max[2] + 0.5)).sub(w).normalize();   // aşağı (araç -Z)
+            this.raycaster.set(w, dir);
+            const list = this.meshes.filter(m => m.visible && m.userData.cls !== CLASS.GLASS && !this.hidden.has(m.userData.bone));
+            const hits = this.raycaster.intersectObjects(list, false);
+            if (!hits.length) return null;
+            const h = hits[0];
+            return { bone: h.object.userData.bone, cls: h.object.userData.cls, point: h.point, normal: h.face.normal.clone().transformDirection(h.object.matrixWorld) };
+        }
+
+        // Araç önünden geriye doğru yatay ışın (tampon/ızgara yüzeyi): x, z araç uzayında
+        surfaceFront(x, z) {
+            if (!this.vd) return null;
+            this.scene.updateMatrixWorld(true);
+            const bb = this.bbox;
+            const o = this.root.localToWorld(new T.Vector3(x, bb.max[1] + 1.5, z));
+            const t = this.root.localToWorld(new T.Vector3(x, bb.max[1] - 0.5, z));
+            this.raycaster.set(o, t.sub(o).normalize());
+            const list = this.meshes.filter(m => m.visible && m.userData.cls !== CLASS.GLASS && !this.hidden.has(m.userData.bone));
+            const hits = this.raycaster.intersectObjects(list, false);
+            if (!hits.length) return null;
+            const h = hits[0];
+            return { bone: h.object.userData.bone, cls: h.object.userData.cls, point: h.point, normal: h.face.normal.clone().transformDirection(h.object.matrixWorld) };
         }
 
         capture(w, h) {

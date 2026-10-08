@@ -312,6 +312,8 @@
             const i = bones.findIndex(b => b.n === 'extra_' + k);
             if (i >= 0) sc.setBoneVisible(i, !!m.extras[k], true);
         }
+        sc.clearProps();
+        for (const rec of m.props || []) sc.addProp(rec);
         sc.applyXray();
         if (VS.v2) VS.v2.invalidate();
     };
@@ -363,12 +365,61 @@
         }
         body.append(card('Ekstralar', 'wrench', h('div', null, eg, h('div', { class: 'card-note', style: { marginTop: '8px', fontSize: '10.5px', color: 'var(--dim)' }, text: extras.length ? 'Araçtaki ekstra parçaları aç/kapat.' : 'Bu araçta ekstra parça yok.' }))));
 
+        body.append(accessoryCard());
+
         // sahne
         body.append(card('Sahne', 'sun', h('div', null,
             h('div', { class: 'row' },
                 h('button', { class: 'btn' + (sc.grid.visible ? ' on' : ''), text: 'Izgara', onclick: function () { sc.setGrid(!sc.grid.visible); this.classList.toggle('on', sc.grid.visible); } }),
                 h('button', { class: 'btn' + (VS.turn ? ' on' : ''), text: 'Döner platform', onclick: function () { VS.setTurntable(!VS.turn); this.classList.toggle('on', VS.turn); } })),
             lbl('Pozlama'), slider('', 0.4, 2, sc.renderer.toneMappingExposure, { step: 0.05, onInput: v => { sc.renderer.toneMappingExposure = v; sc.invalidate(); } }))));
+    }
+
+    // ------------------------------------------------------------------ AKSESUARLAR (prop)
+    function accessoryCard() {
+        const m = S.mod, sc = VS.scene;
+        const list = m.props || (m.props = []);
+        const wrap = h('div');
+        const items = h('div', { class: 'layer-list' });
+        if (!list.length) items.append(h('div', { class: 'empty', html: icon('siren') + '<b>Aksesuar yok</b>Soldaki <b style="display:inline">Aksesuar</b> aracını seçip araca tıkla: tepe lambası, çakar, spoiler, anten…' }));
+        for (const rec of list) {
+            const t = VSProps.byId[rec.type];
+            const it = h('div', { class: 'layer' + (S.selProp === rec.id ? ' sel' : '') },
+                h('div', { class: 'thumb', html: icon((t && t.icon) || 'cube') }),
+                h('div', { class: 'meta' }, h('div', { class: 'nm', text: rec.name }), h('div', { class: 'sb', text: rec.bone })),
+                h('div', { class: 'acts' }, h('button', { class: 'del', title: 'Sil', html: icon('trash'), 'data-a': 'del' })));
+            it.addEventListener('click', e => {
+                if (e.target.closest('[data-a="del"]')) {
+                    const i = list.indexOf(rec); if (i >= 0) list.splice(i, 1);
+                    sc.removeProp(rec.id); if (S.selProp === rec.id) S.selProp = null;
+                    VS.commit(); VS.renderPanel(); return;
+                }
+                S.selProp = rec.id; VS.renderPanel();
+            });
+            items.append(it);
+        }
+        wrap.append(items);
+        const rec = list.find(r => r.id === S.selProp);
+        if (rec) {
+            const t = VSProps.byId[rec.type];
+            const upd = (fn, now) => { fn(); sc.addProp(rec); VS.setDirty(true); if (now) VS.commit(); };
+            const sl = (label, arr, i, min, max, step, unit) => slider(label, min, max, arr[i], { step, unit, onInput: v => upd(() => { arr[i] = v; }), onChange: () => VS.commit() });
+            const pc = h('div', { style: { marginTop: '8px' } },
+                sl('X', rec.pos, 0, -2.5, 2.5, 0.005, ' m'), sl('Y', rec.pos, 1, -3.5, 3.5, 0.005, ' m'), sl('Z', rec.pos, 2, -1.5, 2.5, 0.005, ' m'),
+                sl('Eğim X', rec.rot, 0, -180, 180, 1, '°'), sl('Eğim Y', rec.rot, 1, -180, 180, 1, '°'), sl('Yön Z', rec.rot, 2, -180, 180, 1, '°'),
+                slider('Ölçek', 0.3, 3, rec.s, { step: 0.05, onInput: v => upd(() => { rec.s = v; }), onChange: () => VS.commit() }),
+                colorField(t && t.lights ? 'Işık 1' : 'Renk', rec.color, c => upd(() => { rec.color = c; }), () => VS.commit()),
+                t && t.lights ? colorField('Işık 2', rec.color2, c => upd(() => { rec.color2 = c; }), () => VS.commit()) : null,
+                h('div', { class: 'grid2', style: { marginTop: '8px' } },
+                    h('button', { class: 'btn sm', html: icon('copy') + ' Çoğalt', onclick: () => { const c = JSON.parse(JSON.stringify(rec)); c.id = E.uid('p'); c.pos[0] = -c.pos[0]; list.push(c); sc.addProp(c); S.selProp = c.id; VS.commit(); VS.renderPanel(); } }),
+                    h('button', { class: 'btn sm', html: icon('mirror') + ' Ayna', title: 'X ekseninde karşı tarafa kopyala', onclick: () => { const c = JSON.parse(JSON.stringify(rec)); c.id = E.uid('p'); c.pos[0] = -c.pos[0]; c.rot[2] = -c.rot[2]; list.push(c); sc.addProp(c); S.selProp = c.id; VS.commit(); VS.renderPanel(); } })));
+            wrap.append(pc);
+        }
+        const hasLights = list.some(r => VSProps.byId[r.type] && VSProps.byId[r.type].lights);
+        wrap.append(h('div', { class: 'row', style: { marginTop: '10px' } },
+            h('button', { class: 'btn' + (VS.propTest ? ' on' : ''), disabled: hasLights ? null : true, html: icon('siren') + ' Işık testi', onclick: function () { VS.propTest = !VS.propTest; sc.setPropTest(VS.propTest); this.classList.toggle('on', VS.propTest); } }),
+            h('button', { class: 'btn', html: icon('plus') + ' Aksesuar ekle', onclick: () => VS.tools.set('prop') })));
+        return card('Aksesuarlar (prop)', 'siren', wrap);
     }
 
     // ------------------------------------------------------------------ İSKELET

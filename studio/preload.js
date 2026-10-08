@@ -7,4 +7,5 @@ contextBridge.exposeInMainWorld('loe', {
     autosave: (text) => ipcRenderer.invoke('autosave', text),
     autoload: () => ipcRenderer.invoke('autoload'),
     info: () => ipcRenderer.invoke('app-info'),
+    shot: (name) => ipcRenderer.invoke('shot', name),
 });

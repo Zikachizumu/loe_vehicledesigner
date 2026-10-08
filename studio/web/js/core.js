@@ -13,7 +13,7 @@
     // ------------------------------------------------------------------ DURUM
     function newDesign() { return { v: 1, size: 4096, base: { color: null }, layers: [] }; }
     function newMod() {
-        return { body: '#2b2f36', finish: 'gloss', tint: 3, rim: '#b9bec6', neon: { on: false, color: '#ff2e93' }, parts: {}, hidden: [], open: {}, extras: {} };
+        return { body: '#2b2f36', finish: 'gloss', tint: 3, rim: '#b9bec6', neon: { on: false, color: '#ff2e93' }, parts: {}, hidden: [], open: {}, extras: {}, props: [] };
     }
 
     const S = VS.S = {
@@ -28,6 +28,7 @@
         projName: 'Adsız proje',
         dirty: false,
         selBone: -1,
+        selProp: null, propType: 'lightbar',
         brush: { size: 90, hard: 0.65, opacity: 100, color: '#ff2e93', strength: 55, mirror: false },
         text: { text: 'LOE', font: 'Anton', size: 260, bold: false, italic: false, color: '#ffffff', align: 'center', spacing: 20 },
         shape: { id: 'rounded', color: '#ff2e93' },
