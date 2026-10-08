@@ -51,8 +51,8 @@ b { color: var(--txt); font-weight: 700; }
     background: var(--panel);
     border: 1px solid var(--line);
     border-radius: .65rem;
-    box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .03);
-    backdrop-filter: blur(.4rem);
+    box-shadow: 0 .6rem 1.6rem rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .03);
+    /* backdrop-filter KULLANMA: FiveM'in CEF'inde panelin gölge sınırını siyah dikdörtgen olarak boyuyor */
 }
 /* köşe vurgu çizgileri */
 .panel.side::before, .panel.side::after {
@@ -66,10 +66,10 @@ b { color: var(--txt); font-weight: 700; }
 .side { top: 4.2rem; max-height: calc(100% - 11.2rem); width: 22rem; display: flex; flex-direction: column; }
 .side.left { left: 2.8rem; }
 .side.right { right: 2.8rem; }
-#app.on .side.left { animation: inL .3s cubic-bezier(.2, .8, .2, 1) both; }
-#app.on .side.right { animation: inR .3s cubic-bezier(.2, .8, .2, 1) both; }
-@keyframes inL { from { opacity: 0; transform: translateX(-1rem); } to { opacity: 1; transform: none; } }
-@keyframes inR { from { opacity: 0; transform: translateX(1rem); } to { opacity: 1; transform: none; } }
+#app.on .side.left { animation: inL .3s cubic-bezier(.2, .8, .2, 1); }
+#app.on .side.right { animation: inR .3s cubic-bezier(.2, .8, .2, 1); }
+@keyframes inL { from { opacity: 0; margin-left: -1rem; } to { opacity: 1; margin-left: 0; } }
+@keyframes inR { from { opacity: 0; margin-right: -1rem; } to { opacity: 1; margin-right: 0; } }
 
 /* sol başlık */
 .ph { padding: 1.25rem 1.3rem .85rem; border-bottom: 1px solid var(--line); }
