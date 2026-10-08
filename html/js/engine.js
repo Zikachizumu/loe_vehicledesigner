@@ -77,6 +77,8 @@
     function srcOf(src) {
         if (typeof src !== 'string') return null;
         if (src.startsWith('img:')) return resolver ? resolver(src.slice(4)) : null;
+        // hazır çıkartmalar: html/decals/<ad>.svg (editör ve DUI sayfası aynı klasörde)
+        if (src.startsWith('decal:')) return /^decal:[a-z0-9_]+$/.test(src) ? 'decals/' + src.slice(6) + '.svg' : null;
         return src;
     }
 

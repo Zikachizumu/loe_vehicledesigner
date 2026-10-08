@@ -48,11 +48,14 @@
         C('alpr', 'gear', 'ALPR cihazı', 'ALPR device', 'gear', []),
         C('antenna', 'gear', 'Anten', 'Antenna', 'gear', []),
         C('laptop', 'gear', 'Laptop ünitesi', 'Laptop unit', 'gear', []),
+        Object.assign(C('dc_star_of_life', 'decals', 'Hayat yıldızı', 'Star of life', 'decal', []), { decal: 'star_of_life' }),
+        Object.assign(C('dc_battenburg', 'decals', 'Battenburg damalı şerit', 'Battenburg band', 'decal', []), { decal: 'battenburg' }),
+        Object.assign(C('dc_flames', 'decals', 'Alev', 'Flames', 'decal', []), { decal: 'flames' }),
         Object.assign(C('cs_roof', 'callsigns', 'Tavan çağrı kodu', 'Roof callsign', 'text', []), { text: { chart: 'top', value: '1-ADAM-12', size: 260, font: 'Oswald', bold: true, rot: 90 } }),
     ];
     const categories = [
         { id: 'sirens', tr: 'Sirenler', en: 'Sirens' }, { id: 'leds', tr: 'LED', en: 'LEDs' },
-        { id: 'beacons', tr: 'Döner lamba', en: 'Beacons' }, { id: 'gear', tr: 'Ekipman', en: 'Equipment' },
+        { id: 'beacons', tr: 'Döner lamba', en: 'Beacons' }, { id: 'gear', tr: 'Ekipman', en: 'Equipment' }, { id: 'decals', tr: 'Çıkartmalar', en: 'Decals' },
         { id: 'callsigns', tr: 'Çağrı kodu', en: 'Callsigns' },
     ];
     const fonts = [

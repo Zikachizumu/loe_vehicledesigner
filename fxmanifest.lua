@@ -49,6 +49,7 @@ files {
     'html/dui.html',
     'html/css/*.css',
     'html/js/*.js',
+    'html/decals/*.svg',
 }
 
 dependencies {

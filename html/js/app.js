@@ -904,6 +904,8 @@
             }
             case 'text':
                 return `<svg viewBox="0 0 100 60"><rect x="14" y="14" width="72" height="32" rx="4" fill="none" stroke="#666" stroke-dasharray="4 3"/><text x="50" y="37" font-size="16" font-weight="700" fill="#ddd" text-anchor="middle" font-family="Oswald, Impact">1-A-12</text></svg>`;
+            case 'decal':
+                return `<img src="decals/${esc(item.decal)}.svg" alt="">`;
             default:
                 return `<svg viewBox="0 0 100 60"><rect x="30" y="16" width="40" height="30" rx="4" fill="#2c2c33" stroke="#4a4a52"/><path d="M38 24h24M38 31h24M38 38h14" stroke="#7d7d86" stroke-width="2.5" stroke-linecap="round"/></svg>`;
         }
@@ -975,6 +977,14 @@
         const it = equipItem(id);
         if (!it) return;
         if (it.cat === 'callsigns' && it.text) { addCallsign(it); return; }
+        if (it.decal) {
+            // hazır çıkartma: tasarıma görsel katmanı olarak eklenir
+            const img = new Image();
+            img.onload = () => addImage('decal:' + it.decal, { w: img.naturalWidth || 512, h: img.naturalHeight || 512 })
+                .then(L => { if (L) { L.name = nextName(nm(it)); renderLayers(); toast(t('decal_added')); } });
+            img.src = 'decals/' + it.decal + '.svg';
+            return;
+        }
         S.placing = S.placing === id ? null : id;
         renderTool(); renderHints();
         pushEquipment(true);

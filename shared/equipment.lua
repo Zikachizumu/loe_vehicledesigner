@@ -21,8 +21,14 @@ VD.EquipmentCategories = {
     { id = 'leds',      tr = 'LED',           en = 'LEDs' },
     { id = 'beacons',   tr = 'Döner lamba',   en = 'Beacons' },
     { id = 'gear',      tr = 'Ekipman',       en = 'Equipment' },
+    { id = 'decals',    tr = 'Çıkartmalar',   en = 'Decals' },
     { id = 'callsigns', tr = 'Çağrı kodu',    en = 'Callsigns' },
 }
+
+-- Hazır çıkartmalar (html/decals/<ad>.svg). Seçilince tasarıma görsel katmanı olarak eklenir.
+local function decal(id, tr, en)
+    return { id = 'dc_' .. id, cat = 'decals', tr = tr, en = en, icon = 'decal', colors = {}, props = {}, lights = {}, decal = id }
+end
 
 local function bar(id, tr, en, colors, n, spacing)
     local props, lights = {}, {}
@@ -100,6 +106,21 @@ VD.Equipment = {
     gear('extinguisher','Yangın tüpü',      'Fire extinguisher','prop_fire_exting_1a'),
     gear('toolbox',    'Alet kutusu',       'Toolbox',        'prop_tool_box_04'),
     gear('torch',      'El feneri',         'Flashlight',     'prop_cs_police_torch'),
+
+    -- ===================================================== ÇIKARTMALAR
+    decal('star_of_life',   'Hayat yıldızı',          'Star of life'),
+    decal('sheriff_star',   'Şerif yıldızı',          'Sheriff star'),
+    decal('police_shield',  'Polis kalkanı',          'Police shield'),
+    decal('battenburg',     'Battenburg damalı şerit', 'Battenburg band'),
+    decal('chevrons_rw',    'Kırmızı-beyaz şerit ok', 'Red-white chevrons'),
+    decal('hazard',         'Uyarı şeridi',           'Hazard stripes'),
+    decal('checker_bw',     'Siyah-beyaz dama',       'Checker band'),
+    decal('ems_stripe',     'Ambulans şeridi',        'EMS stripe'),
+    decal('racing_stripes', 'Yarış şeritleri',        'Racing stripes'),
+    decal('swoosh',         'Dalga',                  'Swoosh'),
+    decal('flames',         'Alev',                   'Flames'),
+    decal('number_disc',    'Numara diski',           'Number disc'),
+    decal('loe_crown',      'LOE tacı',               'LOE crown'),
 
     -- ===================================================== ÇAĞRI KODU (prop değil: tuvale hazır metin katmanı ekler)
     { id = 'cs_roof', cat = 'callsigns', tr = 'Tavan çağrı kodu', en = 'Roof callsign', icon = 'text', colors = {}, props = {}, lights = {},

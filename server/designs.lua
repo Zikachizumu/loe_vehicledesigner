@@ -122,7 +122,7 @@ local function sanitizeLayer(L)
     else
         local src = L.src
         if type(src) ~= 'string' then return nil end
-        if not (src:match('^img:%d+$') or validUrl(src)) then return nil end
+        if not (src:match('^img:%d+$') or src:match('^decal:[%l%d_]+$') or validUrl(src)) then return nil end
         o.src = src
         o.w = num(L.w, 1, 20000, 512)
         o.h = num(L.h, 1, 20000, 512)

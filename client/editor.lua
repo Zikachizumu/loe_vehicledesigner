@@ -41,7 +41,7 @@ local function catalogue()
             if not IsModelInCdimage(joaat(p.m)) then ok = false break end
         end
         if ok then
-            out[#out + 1] = { id = it.id, cat = it.cat, tr = it.tr, en = it.en, icon = it.icon, colors = it.colors, roof = it.roof, text = it.text }
+            out[#out + 1] = { id = it.id, cat = it.cat, tr = it.tr, en = it.en, icon = it.icon, colors = it.colors, roof = it.roof, text = it.text, decal = it.decal }
         end
     end
     return out
