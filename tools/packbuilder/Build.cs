@@ -27,7 +27,7 @@ static class Build
         if (models.Count == 0) throw new ArgumentException("--models boş");
 
         var dir = Path.Combine(outDir, pack);
-        var stream = Path.Combine(dir, "stream");
+        var stream = Path.Combine(dir, "stream_enhanced");
         var surfaces = Path.Combine(dir, "surfaces");
         var prevDir = Path.Combine(outDir, pack + "_preview");
         Directory.CreateDirectory(stream);
@@ -122,7 +122,8 @@ static class Verify
     public static int Run(string dir)
     {
         int bad = 0, ydrs = 0;
-        foreach (var f in Directory.GetFiles(Path.Combine(dir, "stream")))
+        RpfManager.IsGen9 = true;   // stream_enhanced: gen9 dosyaları
+        foreach (var f in Directory.GetFiles(Path.Combine(dir, "stream_enhanced")))
         {
             try
             {

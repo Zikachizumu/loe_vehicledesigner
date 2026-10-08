@@ -82,7 +82,7 @@ static class EquipBuild
         var models = (Arg(args, "--models") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
         var labels = (Arg(args, "--labels") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
         var dir = Path.Combine(outDir, pack);
-        var stream = Path.Combine(dir, "stream");
+        var stream = Path.Combine(dir, "stream_enhanced");
         var prev = Path.Combine(outDir, pack + "_preview");
         Directory.CreateDirectory(stream);
         Directory.CreateDirectory(prev);
@@ -187,7 +187,7 @@ static class EquipBuild
         man.Append("fx_version 'cerulean'\ngame 'gta5'\nlua54 'yes'\n\n");
         man.Append($"name '{pack}'\nauthor 'Legends of Empire'\ndescription 'loe_vehicledesigner ekipman paketi: vanilla polis araçlarından çıkarılmış tepe lambaları'\nversion '1.0.0'\n\n");
         man.Append("loe_vd_pack 'yes'\nloe_vd_equipment 'equipment.json'\n\n");
-        man.Append($"files {{\n    'equipment.json',\n    'stream/{pack}.ytyp',\n}}\n\ndata_file 'DLC_ITYP_REQUEST' 'stream/{pack}.ytyp'\n");
+        man.Append("files {\n    'equipment.json',\n}\n\nthis_is_a_map 'yes'\n");
         File.WriteAllText(Path.Combine(dir, "fxmanifest.lua"), man.ToString(), new UTF8Encoding(false));
         try { Directory.Delete(Path.Combine(outDir, ".tmp_" + pack), true); } catch { }
         Console.WriteLine($"{pack}: {archs.Count} prop, {items.Count} katalog öğesi → {dir}");

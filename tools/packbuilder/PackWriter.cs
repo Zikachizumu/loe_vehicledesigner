@@ -106,7 +106,22 @@ static class PackWriter
         doc.LoadXml(xml);
         var data = XmlMeta.GetData(doc, MetaFormat.Ydr, "");
         if (data == null || data.Length == 0) throw new Exception("ydr dönüştürülemedi");
-        return data;
+        return Gen9(data, ".ydr");
+    }
+
+    // FiveM for GTAV Enhanced: stream_enhanced klasörü gen9 biçimi ister (ydr = 159, ytd = 5).
+    // XML'den gen8 üretilir, CodeWalker'ın kendi dönüştürücüsüyle gen9'a çevrilir.
+    public static byte[] Gen9(byte[] gen8, string ext)
+    {
+        var prev = RpfManager.IsGen9;
+        RpfManager.IsGen9 = true;
+        try
+        {
+            var data = CodeWalker.Core.Utils.Gen9Converter.TryConvert(gen8, ext, false);
+            if (data == null || data.Length == 0) throw new Exception(ext + " gen9'a dönüştürülemedi");
+            return data;
+        }
+        finally { RpfManager.IsGen9 = prev; }
     }
 
     // ------------------------------------------------------------------ YTD
@@ -142,7 +157,7 @@ static class PackWriter
         doc.LoadXml(x.ToString());
         var data = XmlMeta.GetData(doc, MetaFormat.Ytd, tmpDir);
         if (data == null || data.Length == 0) throw new Exception("ytd dönüştürülemedi");
-        return data;
+        return Gen9(data, ".ytd");
     }
 
     // ------------------------------------------------------------------ YTYP
@@ -235,9 +250,8 @@ static class PackWriter
         sb.Append($"name '{pack}'\nauthor 'Legends of Empire'\ndescription 'loe_vehicledesigner yüzey paketi (tools/packbuilder ile üretildi)'\nversion '1.0.0'\n\n");
         sb.Append("loe_vd_pack 'yes'\n");
         foreach (var m in models) sb.Append($"loe_vd_surface 'surfaces/{m}.json'\n");
-        sb.Append("\nfiles {\n    'surfaces/*.json',\n    'surfaces/*.png',\n");
-        sb.Append($"    'stream/{pack}.ytyp',\n}}\n\n");
-        sb.Append($"data_file 'DLC_ITYP_REQUEST' 'stream/{pack}.ytyp'\n");
+        // Enhanced: gen9 dosyaları stream_enhanced klasöründe; ytyp'yi this_is_a_map kendisi kaydeder (loe_pillbox_mlo ile aynı yol)
+        sb.Append("\nfiles {\n    'surfaces/*.json',\n    'surfaces/*.png',\n}\n\nthis_is_a_map 'yes'\n");
         File.WriteAllText(Path.Combine(dir, "fxmanifest.lua"), sb.ToString(), new UTF8Encoding(false));
     }
 

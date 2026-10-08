@@ -11,6 +11,10 @@ araç modellerinden paketleri otomatik üretir:
 5. Her parça x her slot için bir `.ydr` (gölgelendirici `normal_spec_decal`, 4 mm dışarı itilmiş), slot dokularını
    içeren bir `.ytd`, tüm arketipleri içeren bir `.ytyp`, `surfaces/<model>.json` ve 2B düzenleyici için
    `surfaces/<model>.png` şablonu yazar.
+6. **FiveM for GTAV Enhanced (gen9):** `.ydr` (RSC7 sürüm 159) ve `.ytd` (sürüm 5) dosyaları CodeWalker'ın kendi
+   gen8→gen9 dönüştürücüsüyle çevrilir ve `stream_enhanced/` klasörüne yazılır (Enhanced'de `stream/` yerine bu klasör
+   yüklenir; `stream/` içindeki gen8 dosyaları "Rsc7 file ... has version 165, expected 159" hatasıyla atlanır).
+   `.ytyp`'yi manifestteki `this_is_a_map 'yes'` kaydeder (`data_file` gerekmez).
 
 **Slot:** aynı modelde aynı anda ekranda kaç *farklı* tasarım gösterilebileceği. Aynı tasarımı taşıyan araçlar tek slotu
 paylaşır (ör. tüm polis araçları aynı kaplamayla tek slot kullanır).
