@@ -17,6 +17,8 @@ try
             return Build.Run(args);
         case "equip":
             return EquipBuild.Run(args);
+        case "mesh3d":
+            return Mesh3D.Run(args);
         case "debugbar":
             return DebugBar.Run(args[1], args[2]);
         case "debugroof":

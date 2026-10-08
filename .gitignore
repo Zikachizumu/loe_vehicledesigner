@@ -6,3 +6,6 @@ tools/packbuilder/bin/
 tools/packbuilder/obj/
 tools/packbuilder/CodeWalker/
 tools/packbuilder/out/
+studio/data/
+studio/dist/
+_oxv/

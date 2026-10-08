@@ -1,0 +1,9 @@
+{
+  "name": "loe-vehicle-studio",
+  "productName": "LOE Vehicle Studio",
+  "version": "1.0.0",
+  "description": "Legends of Empire — GTA V araç iskeleti görüntüleyici ve livery/modifiye stüdyosu",
+  "main": "main.js",
+  "author": "Legends of Empire Roleplay",
+  "license": "UNLICENSED"
+}

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: data:; img-src 'self' blob: data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; font-src 'self' data:; connect-src 'self' blob: data: https:; media-src 'self' blob: data:;">
+<title>LOE Vehicle Studio</title>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/studio.css">
+</head>
+<body>
+<div class="splash" id="splash">
+    <div class="box">
+        <div id="splashCrown"></div>
+        <h1>LEGENDS OF <em>EMPIRE</em></h1>
+        <p>VEHICLE STUDIO</p>
+        <div class="bar"><i></i></div>
+    </div>
+</div>
+
+<div id="app">
+    <header id="top">
+        <div class="brand">
+            <span id="brandCrown"></span>
+            <div><div class="nm">LEGENDS OF <em>EMPIRE</em></div><div class="sub">VEHICLE STUDIO</div></div>
+        </div>
+        <button class="tbtn pri" id="btnExport"></button>
+        <button class="tbtn" id="btnSave"></button>
+        <button class="tbtn" id="btnOpen"></button>
+        <button class="tbtn" id="btnNew"></button>
+        <button class="tbtn" id="btnHelp"></button>
+        <div class="sp"></div>
+        <input id="projName" value="Adsız proje" spellcheck="false" maxlength="48">
+        <div class="sp"></div>
+        <div class="vchip" id="vChip"></div>
+        <button class="ibtn" id="btnUndo" title="Geri al (Ctrl+Z)"></button>
+        <button class="ibtn" id="btnRedo" title="Yinele (Ctrl+Y)"></button>
+    </header>
+
+    <nav id="rail"></nav>
+
+    <section class="pane" id="view3d">
+        <div id="gl"></div>
+        <div id="labels"></div>
+        <div class="hint" id="hint"></div>
+        <div id="opts" class="hidden"></div>
+        <div class="vbar" id="vbar"></div>
+        <div class="vcube" id="vcube"></div>
+    </section>
+
+    <section class="pane" id="view2d">
+        <div class="ph2">
+            <div class="tex"><i></i><span id="texName">Tuval</span></div>
+            <button class="ibtn" id="zOut" style="width:26px;height:26px"></button>
+            <span class="zoomtxt" id="zoomTxt">100%</span>
+            <button class="ibtn" id="zIn" style="width:26px;height:26px"></button>
+            <button class="ibtn" id="zFit" style="width:26px;height:26px" title="Sığdır"></button>
+            <button class="chipb on" id="cXray"><i></i>X-IŞINI</button>
+            <button class="chipb on" id="cPaint"><i></i>BOYA</button>
+            <button class="chipb" id="cGrid"><i></i>IZGARA</button>
+            <button class="chipb" id="cMirror"><i></i>AYNA X</button>
+        </div>
+        <div id="stage"><canvas id="c2d"></canvas></div>
+    </section>
+
+    <aside id="side">
+        <div class="tabs" id="tabs"></div>
+        <div id="tabBody"></div>
+    </aside>
+
+    <footer id="status">
+        <span><b id="stVeh">—</b></span>
+        <span id="stInfo"></span>
+        <span class="grow"></span>
+        <span>Doku <b id="stSize">2048</b></span>
+        <span id="stLive">● Modelde canlı</span>
+        <span id="stDirty">Kaydedildi</span>
+        <span>LOE Vehicle Studio 1.0</span>
+    </footer>
+</div>
+<div class="toasts" id="toasts"></div>
+
+<script src="js/vendor/three.min.js"></script>
+<script src="js/vendor/OrbitControls.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/colorpicker.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/vehicle.js"></script>
+<script src="js/scene3d.js"></script>
+<script src="js/core.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/editor2d.js"></script>
+<script src="js/tools.js"></script>
+<script src="js/panels.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

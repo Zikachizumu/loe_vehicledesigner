@@ -6,11 +6,15 @@ Ek kütüphane gerekmez. Şifre anahtarları kullanıcının kendi GTA5.exe dosy
 
 Kullanım:
     python extract_yft.py <GTA V klasörü> <çıktı klasörü> <magic.dat> model1 model2 ...
+    python extract_yft.py <GTA V klasörü> <çıktı klasörü> <magic.dat> --all [--list]
+        --all : vehicles.rpf içindeki TÜM araç modellerini (yalnızca <model>.yft) çıkarır
+        --list: dosya yazmadan model listesini basar
 
 Çıktı: <çıktı>/<model>.yft, <çıktı>/<model>_hi.yft (varsa) ve sources.json.
 """
 import hashlib
 import json
+import re
 import os
 import struct
 import sys
@@ -329,10 +333,18 @@ def priority(path):
     return 1
 
 
+def is_vehicle_yft(n, path):
+    if not n.endswith('.yft') or n.endswith('_hi.yft') or '_lod' in n or '_slod' in n:
+        return False
+    return 'vehicles.rpf' in path or '\\levels\\gta5\\vehicles\\' in path
+
+
 def scan(gta, keys, wanted):
     found = {}
     tops = []
-    for name in ('x64e.rpf', 'update/update.rpf', 'update/update2.rpf'):
+    # araçlar x64e dışındaki ana arşivlerde de bulunabilir (ör. klasik araçlar)
+    base = sorted(f for f in os.listdir(gta) if re.match(r'x64[a-z]\.rpf$', f)) + ['update/update.rpf', 'update/update2.rpf']
+    for name in base:
         p = os.path.join(gta, name)
         if os.path.isfile(p):
             tops.append(p)
@@ -357,7 +369,7 @@ def scan(gta, keys, wanted):
                         walk(rpf.child(e))
                     except Exception as ex:
                         print('  ! ' + e['path'] + ': ' + str(ex))
-            elif e['kind'] == 'res' and n in wanted:
+            elif e['kind'] == 'res' and (n in wanted if wanted is not None else is_vehicle_yft(n, e['path'])):
                 pr = priority(e['path'])
                 cur = found.get(n)
                 if not cur or pr > cur[0] or (pr == cur[0] and e['path'] > cur[1]):
@@ -379,18 +391,34 @@ def main():
         print(__doc__)
         sys.exit(1)
     gta, out, magic = sys.argv[1], sys.argv[2], sys.argv[3]
-    models = [m.lower() for m in sys.argv[4:]]
+    rest = sys.argv[4:]
+    all_mode = '--all' in rest
+    list_only = '--list' in rest
+    models = [m.lower() for m in rest if not m.startswith('--')]
     os.makedirs(out, exist_ok=True)
     print('Anahtarlar türetiliyor...')
-    keys = Keys(os.path.join(gta, 'GTA5.exe'), magic)
-    wanted = set()
-    for m in models:
-        wanted.add(m + '.yft')
-        wanted.add(m + '_hi.yft')
+    exe = 'GTA5_Enhanced.exe' if os.path.isfile(os.path.join(gta, 'GTA5_Enhanced.exe')) else 'GTA5.exe'
+    print('Anahtar kaynağı: ' + exe)
+    keys = Keys(os.path.join(gta, exe), magic)
+    if all_mode:
+        wanted = None
+    else:
+        wanted = set()
+        for m in models:
+            wanted.add(m + '.yft')
+            wanted.add(m + '_hi.yft')
     print('Arşivler taranıyor...')
     found = scan(gta, keys, wanted)
+    if list_only:
+        for n in sorted(found):
+            print(n[:-4], found[n][1])
+        print('toplam', len(found))
+        return
     sources = {}
     for n, (pr, path, rpf, e) in sorted(found.items()):
+        if all_mode and os.path.isfile(os.path.join(out, n)):
+            sources[n] = path
+            continue
         stored = rpf.read(e)
         # Arşivde: 16 baytlık kayıt başlığı + deflate verisi. Gevşek dosya: RSC7 başlığı + deflate verisi.
         body = stored[16:]
@@ -404,7 +432,7 @@ def main():
         open(os.path.join(out, n), 'wb').write(data)
         sources[n] = path
         print('  %-28s %8d  %s' % (n, len(data), path))
-    missing = [m for m in models if (m + '.yft') not in found]
+    missing = [m for m in models if (m + '.yft') not in found] if not all_mode else []
     json.dump({'sources': sources, 'missing': missing}, open(os.path.join(out, 'sources.json'), 'w'), indent=1)
     if missing:
         print('Bulunamadı: ' + ', '.join(missing))

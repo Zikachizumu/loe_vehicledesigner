@@ -53,13 +53,21 @@ class VehicleMesh
     public static YftFile LoadYft(string path)
     {
         var data = File.ReadAllBytes(path);
-        var entry = RpfFile.CreateResourceFileEntry(ref data, 0);
-        entry.Name = Path.GetFileName(path);
-        entry.NameLower = entry.Name.ToLowerInvariant();
-        data = ResourceBuilder.Decompress(data);
-        var yft = new YftFile(entry);
-        yft.Load(data, entry);
-        return yft;
+        // Enhanced (gen9) yft: RSC7 sürümü 171; CodeWalker'ın gen9 okuyucusu RpfManager.IsGen9 ile açılır
+        bool g9 = data.Length > 8 && BitConverter.ToInt32(data, 4) == 171;
+        var prev = RpfManager.IsGen9;
+        RpfManager.IsGen9 = g9;
+        try
+        {
+            var entry = RpfFile.CreateResourceFileEntry(ref data, 0);
+            entry.Name = Path.GetFileName(path);
+            entry.NameLower = entry.Name.ToLowerInvariant();
+            data = ResourceBuilder.Decompress(data);
+            var yft = new YftFile(entry);
+            yft.Load(data, entry);
+            return yft;
+        }
+        finally { RpfManager.IsGen9 = prev; }
     }
 
     static Vector3 ReadV3(VertexData vd, int v, int c)
