@@ -72,7 +72,14 @@ end
 
 function World.setEditing(veh)
     World.editing = veh
-    if veh then World.drop(veh) end
+    if veh then
+        World.drop(veh)
+        -- düzenlenen araca slot kalsın: aynı modelin dünya kaplamaları bırakılır, sonraki taramada boş slotlarla geri gelir
+        local model = GetEntityModel(veh)
+        for v in pairs(World.renders) do
+            if DoesEntityExist(v) and GetEntityModel(v) == model then World.drop(v) end
+        end
+    end
     World.kick()
 end
 
