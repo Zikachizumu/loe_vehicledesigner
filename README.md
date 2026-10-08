@@ -36,12 +36,9 @@ Sağ panel: plaka, geri al / yinele, kapat, katman listesi (göster/gizle, kilit
    set loe_vd_openai_key "sk-..."
    ```
    Anahtar yoksa YZ sekmesi "kapalı" görünür, geri kalan her şey çalışır.
-4. Yetkiler (`config.lua` → `Config.Access`):
-   ```cfg
-   add_ace group.admin loe.vehicledesigner allow          # her aracı tasarlayabilir
-   add_ace group.admin loe.vehicledesigner.model allow    # "tüm <model> araçları" kaydı
-   ```
-   Varsayılan: `police`, `ambulance`, `mechanic` meslekleri ve aracının sahibi olan oyuncular tasarlayabilir; model geneli kayıt `mechanic` rütbe 3+ ve ace sahiplerinde.
+4. Yetkiler (`config.lua` → `Config.Access`), LOE varsayılanı:
+   - Tasarlayabilen: `police`, `bcso`, `ambulance`, `mechanic` meslekleri (tüm rütbeler), aracının sahibi olan oyuncular ve `admin` ace'i olanlar (server.cfg'de `add_ace group.admin admin allow` zaten var).
+   - "Tüm <model> araçları" kaydı: bu mesleklerin 4. rütbesi (Chief / Manager) ve adminler.
 5. Resource ilk kez eklendiği için txAdmin konsolunda `refresh` sonra `ensure loe_vehicledesigner`.
 
 ## Kullanım

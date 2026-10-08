@@ -27,9 +27,10 @@ Config.CommandAliases = { 'vehicledesigner' }
 Config.OpenKey        = ''                     -- RegisterKeyMapping varsayılanı (boş = atanmamış)
 
 Config.Access = {
-    ace  = 'loe.vehicledesigner',              -- bu ace'e sahip olan her aracı tasarlayabilir
+    ace  = 'admin',                            -- bu ace'e sahip olan her aracı tasarlayabilir (server.cfg: add_ace group.admin admin allow)
     jobs = {                                   -- meslek = en düşük rütbe. Boş tablo = meslek ile erişim yok
         police    = 0,
+        bcso      = 0,
         ambulance = 0,
         mechanic  = 0,
     },
@@ -37,9 +38,10 @@ Config.Access = {
     owners        = true,                      -- oyuncular SAHİBİ oldukları aracı tasarlayabilir (player_vehicles)
 
     -- "Tüm <model> araçları" kaydı sunucudaki o modelin TÜM araçlarını etkiler → ayrı yetki
+    -- (LOE rütbeleri: 4 = Chief / Manager)
     modelScope = {
-        ace  = 'loe.vehicledesigner.model',
-        jobs = { mechanic = 3 },
+        ace  = 'admin',
+        jobs = { police = 4, bcso = 4, ambulance = 4, mechanic = 4 },
     },
 
     requireDriver = true,                      -- sürücü koltuğunda olmak gerekir
