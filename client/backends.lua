@@ -41,7 +41,10 @@ local function sharedShell(pack, key, design)
     slotUse[pack.hash][slot] = true
     local w, h = texSize()
     s = { slot = slot, dui = DUI.acquire(w, h), refs = 1, pack = pack, key = key }
-    if pack.txd then RequestStreamedTextureDict(pack.txd, false) end
+    -- değiştirme, doku sözlüğü bellekteyken kaydedilmeli; sözlük açık tutulur
+    RequestStreamedTextureDict(pack.txd, false)
+    local limit = GetGameTimer() + 4000
+    while not HasStreamedTextureDictLoaded(pack.txd) and GetGameTimer() < limit do Wait(0) end
     AddReplaceTexture(pack.txd, pack.tex:format(slot), s.dui.txd, s.dui.tex)
     DUI.setDesign(s.dui, design)
     shared[pack.hash][key] = s
@@ -58,7 +61,7 @@ local function releaseShared(s)
     if shared[pack.hash] then shared[pack.hash][s.key] = nil end
 end
 
-local function spawnParts(veh, pack, slot)
+local function spawnParts(veh, pack, slot, extras)
     local props = {}
     local pos = GetEntityCoords(veh)
     for _, part in ipairs(pack.parts) do
@@ -77,6 +80,8 @@ local function spawnParts(veh, pack, slot)
             AttachEntityToEntity(obj, veh, bone, o[1] + 0.0, o[2] + 0.0, o[3] + 0.0, r[1] + 0.0, r[2] + 0.0, r[3] + 0.0, false, false, false, false, 2, true)
             SetModelAsNoLongerNeeded(hash)
             props[#props + 1] = obj
+            local extraId = part.bone and tonumber(part.bone:match('^extra_(%d+)$'))
+            if extraId and extras then extras[obj] = extraId end
         else
             VD.debug('kaplama modeli bulunamadı: ' .. name)
         end
@@ -87,7 +92,10 @@ end
 function shell.attach(veh, surf, key, design)
     local s = sharedShell(surf.pack, key, design)
     if not s then return nil end
-    return { kind = 'shell', veh = veh, shared = s, props = spawnParts(veh, surf.pack, s.slot) }
+    local inst = { kind = 'shell', veh = veh, shared = s, extras = {} }
+    inst.props = spawnParts(veh, surf.pack, s.slot, inst.extras)
+    shell.check(inst)
+    return inst
 end
 
 function shell.update(inst, design)
@@ -103,14 +111,24 @@ function shell.detach(inst)
     inst.shared = nil
 end
 
--- Kaplama prop'ları bir şekilde silindiyse (araç yeniden akışa girdi vb.) yeniden oluştur
+-- Kaplama prop'ları bir şekilde silindiyse (araç yeniden akışa girdi vb.) yeniden oluştur.
+-- extra_N kemiğine bağlı parçalar o ekstra kapalıyken gizlenir (aksi hâlde kaplama havada kalır).
 function shell.check(inst)
     if not inst.shared then return end
     for _, obj in ipairs(inst.props) do
         if not DoesEntityExist(obj) or not IsEntityAttachedToEntity(obj, inst.veh) then
             for _, o in ipairs(inst.props) do if DoesEntityExist(o) then DeleteEntity(o) end end
-            inst.props = spawnParts(inst.veh, inst.shared.pack, inst.shared.slot)
-            return
+            inst.extras = {}
+            inst.props = spawnParts(inst.veh, inst.shared.pack, inst.shared.slot, inst.extras)
+            break
+        end
+    end
+    for _, obj in ipairs(inst.props) do
+        local n = inst.extras and inst.extras[obj]
+        if n and DoesEntityExist(obj) then
+            local on = IsVehicleExtraTurnedOn(inst.veh, n)
+            on = on == true or on == 1
+            if IsEntityVisible(obj) ~= on then SetEntityVisible(obj, on, false) end
         end
     end
 end

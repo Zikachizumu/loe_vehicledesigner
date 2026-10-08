@@ -56,7 +56,9 @@ exports.loe_vehicledesigner:Open()
 
 Tasarım 4096×4096'lık bir tuvalde tutulur. Araç 5 yüzeye ayrılır (Üst, Sol, Sağ, Ön, Arka) ve her yüzey tuvalde kendi bölgesine yerleşir (`shared/layout.lua`). Tuval bir DUI sayfasında çizilir ve çalışma zamanı dokusu olarak araca basılır.
 
-GTA vanilla araçlarında bu tuvali taşıyacak bir UV yüzeyi yoktur. Bu yüzden her model için bir **yüzey paketi** gerekir: aracın boya geometrisinin kutu izdüşümlü UV'lerle kopyalanmış bir kaplama modeli (`tools/packbuilder`). Paket, `loe_vd_pack 'yes'` satırı olan ayrı bir resource'tur ve otomatik bulunur (alt köşede "N yüzey paketi yüklendi").
+GTA vanilla araçlarında bu tuvali taşıyacak bir UV yüzeyi yoktur. Bu yüzden her model için bir **yüzey paketi** gerekir: aracın boya geometrisinin kutu izdüşümlü UV'lerle kopyalanmış bir kaplama modeli. Paket, `loe_vd_pack 'yes'` satırı olan ayrı bir resource'tur ve otomatik bulunur (alt köşede "N yüzey paketi yüklendi"). Paketler `tools/packbuilder` ile oyunun kendi modellerinden üretilir; ayrıntılar [tools/packbuilder/README.md](tools/packbuilder/README.md).
+
+LOE için hazır üretilenler: `loe_vd_pack_emergency` (30 polis / EMS / itfaiye aracı) ve `loe_vd_pack_cars` (galerideki 50 araba + gauntlet3, elegy, dominator, aleutian). Paketli araçlarda 2B düzenleyici, aracın yüzey şablonunu (silüetini) arka planda gösterir.
 
 | Yüzey türü | Durum |
 |---|---|
@@ -93,3 +95,5 @@ Paketi olmayan araçta da tasarım kaydedilir; paket eklendiğinde aynı yerleş
 | `server/*.lua` | Framework köprüsü, veritabanı, atama dizini, kaydetme/kütüphane, görseller, YZ, siren durumu |
 | `html/` | Editör (index.html) ve araç dokusu sayfası (dui.html), ortak çizim motoru `js/engine.js` |
 | `_dev/mock.html` | Tarayıcıda oyun olmadan arayüz önizlemesi (`python -m http.server` ile kökten sun) |
+| `_dev/test_lua.lua` | Oyun dışı Lua testleri: `lua5.4 _dev/test_lua.lua . _dev/expected_police4.lua` |
+| `tools/packbuilder/` | Yüzey paketi üreticisi (Python çıkarıcı + .NET/CodeWalker üretici) |

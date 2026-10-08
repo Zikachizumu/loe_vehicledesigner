@@ -120,7 +120,12 @@
         }
     };
 
+    // Paket üreticisinin gerçek çıktısı (police4) varsa onu kullan
+    let sample = null;
+    fetch('sample_police4.json').then(r => r.ok ? r.json() : null).then(j => { sample = j; }).catch(() => {});
+
     function open() {
+        const sCharts = sample && kind === 'shell' ? sample.charts : charts;
         send({
             action: 'open', locale: lang, accent: '#ff2e93',
             vehicle: {
@@ -129,7 +134,8 @@
                 current: { primary: '#1d1d1f', secondary: '#111111', tint: 0, neonOn: false, neonColor: '#ff00ff' },
                 bounds: { min: [bbox.min.x, bbox.min.y, bbox.min.z], max: [bbox.max.x, bbox.max.y, bbox.max.z] },
             },
-            surface: { kind, charts: kind === 'livery' ? [] : charts, size: 4096, texture: 2048, pack: kind === 'shell' ? 'loe_vd_pack_base' : null, packs: kind === 'shell' ? 5 : 0 },
+            surface: { kind, charts: kind === 'livery' ? [] : sCharts, size: 4096, texture: 2048, pack: kind === 'shell' ? 'loe_vd_pack_emergency' : null, packs: kind === 'shell' ? 2 : 0,
+                template: sample && kind === 'shell' ? '/_dev/sample_police4.png' : null },
             design: null, meta: { id: null, name: '', mine: true },
             perms: { modelScope: true, ai: true },
             limits: { layers: 120, equipment: 30 },
@@ -140,7 +146,7 @@
 
     function boot() {
         frame.contentWindow.VDMock = window.VDMock;
-        setTimeout(open, 150);
+        setTimeout(open, 400);
     }
     frame.addEventListener('load', boot);
     try { if (frame.contentDocument && frame.contentDocument.readyState === 'complete' && frame.contentWindow.VDApp) boot(); } catch (e) { /* yok say */ }

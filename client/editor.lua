@@ -101,7 +101,7 @@ function Editor.open()
         surface = {
             kind = S.surf.kind, charts = S.surf.charts or {}, size = S.surf.size,
             texture = (S.surf.kind == 'decal') and (Config.Decals.resolution or 1024) or Config.Canvas.texture,
-            pack = S.surf.name, packs = Packs.count,
+            pack = S.surf.name, packs = Packs.count, template = S.surf.template,
         },
         design = design,
         meta = res.meta,
@@ -115,12 +115,17 @@ function Editor.open()
     SetNuiFocus(true, true)
 
     CreateThread(function()
+        local nextCheck = 0
         while Editor.active do
             if not DoesEntityExist(S.veh) then Editor.close(true) break end
             Cam.update()
             HideHudAndRadarThisFrame()
             Equipment.drawEditGhosts()
             if S.test then Equipment.drawLights(S.veh, S.equip, GetGameTimer()) end
+            if S.inst and GetGameTimer() > nextCheck then
+                nextCheck = GetGameTimer() + 500
+                Backends.check(S.inst) -- ekstra değişince kaplama parçası görünürlüğü
+            end
             Wait(0)
         end
     end)

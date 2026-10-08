@@ -77,7 +77,8 @@ function Packs.surfaceFor(veh)
     local model = GetEntityModel(veh)
     local p = Packs.byModel[model]
     if p then
-        return { kind = 'shell', pack = p, charts = p.charts, size = p.size, bbox = p.bbox or bboxOf(model), name = p.resource }
+        local template = type(p.template) == 'string' and ('https://cfx-nui-%s/%s'):format(p.resource, p.template) or nil
+        return { kind = 'shell', pack = p, charts = p.charts, size = p.size, bbox = p.bbox or bboxOf(model), name = p.resource, template = template }
     end
     local lv = Config.Liveries[VD.modelName(veh)]
     if lv then

@@ -1294,6 +1294,11 @@
         x.fillStyle = '#0d0d12';
         x.fillRect(0, 0, px, px);
         const k = px / S.design.size;
+        if (S.template && S.surface.template) {
+            // paket şablonu: aracın yüzeylerdeki silueti (tools/packbuilder üretir)
+            const tpl = E.getImage(S.surface.template);
+            if (tpl) x.drawImage(tpl, 0, 0, px, px);
+        }
         if (S.template) {
             x.font = `${Math.round(12 * px / 700)}px Chakra Petch, sans-serif`;
             for (const ch of S.surface.charts || []) {
