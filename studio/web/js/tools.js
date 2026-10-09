@@ -23,10 +23,12 @@
         { id: 'prop', icon: 'siren', tr: 'Aksesuar', key: 'O' },
         { id: 'presets', icon: 'layout', tr: 'Şablon', key: 'P' },
         { id: 'picker', icon: 'pipette', tr: 'Damlalık', key: 'K' },
+        'sep',
+        { id: 'sirens', icon: 'siren', tr: 'Sirenler', key: 'R', box: true },
     ];
     const byId = {}; TOOLS.forEach(t => { if (t !== 'sep') byId[t.id] = t; });
 
-    const T = VS.tools = { list: TOOLS, byId };
+    const T = VS.tools = { list: TOOLS, byId, OPTS: null };
 
     // ------------------------------------------------------------------ ARAÇ ÇUBUĞU
     T.renderRail = function () {
@@ -34,7 +36,7 @@
         rail.innerHTML = '';
         for (const t of TOOLS) {
             if (t === 'sep') { rail.append(h('div', { class: 'rail-sep' })); continue; }
-            const b = h('button', { class: 'tool' + (S.tool === t.id ? ' on' : ''), title: `${t.tr} (${t.key})`, 'data-t': t.id, html: icon(t.icon) + `<span>${t.tr}</span>` });
+            const b = h('button', { class: 'tool' + (t.box ? ' box' : '') + (S.tool === t.id ? ' on' : ''), title: `${t.tr} (${t.key})`, 'data-t': t.id, html: icon(t.icon) + `<span>${t.tr}</span>` });
             b.addEventListener('click', () => T.set(t.id));
             rail.append(b);
         }
@@ -50,6 +52,7 @@
         if (VS.v2) VS.v2.cv.style.cursor = id === 'select' ? 'default' : 'crosshair';
         T.renderOpts();
         VS.updateHint();
+        VS.syncSirenMode && VS.syncSirenMode();
     };
 
     // ------------------------------------------------------------------ YERLEŞTİRME YARDIMCILARI
@@ -304,6 +307,7 @@
                 return false;
             }
             if (id === 'prop') { if (hit && hit.point) { VS.addPropAt(S.propType, hit); return true; } return false; }
+            if (id === 'sirens') { const n = sc.nearestSiren(e.clientX, e.clientY, 22); if (n) { VS.selectSiren(n, false); return true; } return false; }
             if (id === 'picker') { if (hit && hit.chart) { pickColor(hit.px, hit.py); return true; } return false; }
             if (def && def.place) { if (hit && hit.chart) { T.place(hit.px, hit.py, hit.chart); return true; } return false; }
             if (id === 'select') {
@@ -371,14 +375,17 @@
         const box = $('#opts');
         const id = S.tool;
         const def = byId[id];
+        const keepScroll = box.scrollTop;
         box.innerHTML = '';
-        if (id === 'select') { box.classList.add('hidden'); return; }
+        if (id === 'select') { box.classList.add('hidden'); if (VS.scene) VS.scene.setViewShift(0); return; }
         box.classList.remove('hidden');
+        if (VS.scene) VS.scene.setViewShift(box.offsetWidth + 14);
         box.append(h('h4', { html: icon(def.icon) + def.tr.toUpperCase() }));
         const body = h('div');
         box.append(body);
         const R = OPTS[id];
         if (R) R(body);
+        box.scrollTop = keepScroll;
     };
 
     const brushOpts = (body, withColor) => {
@@ -401,7 +408,7 @@
         body.append(g);
     };
 
-    const OPTS = {
+    const OPTS = T.OPTS = {
         brush: (b) => brushOpts(b, true),
         eraser: (b) => brushOpts(b, false),
         smudge: (b) => brushOpts(b, false),

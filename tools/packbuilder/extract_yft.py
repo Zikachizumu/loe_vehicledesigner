@@ -259,6 +259,7 @@ class Rpf:
         self.f, self.start, self.size, self.name, self.path, self.keys = f, start, size, name, path, keys
         f.seek(start)
         ver, count, nlen, enc = struct.unpack('<4I', f.read(16))
+        self.enc = enc
         if ver != 0x52504637:
             raise ValueError('RPF7 değil: ' + path)
         ent = f.read(count * 16)

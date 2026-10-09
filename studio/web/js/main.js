@@ -25,6 +25,7 @@
         if (VS.tools.byId[t] && VS.tools.byId[t].paint) s = 'Araç üzerinde sol tık + sürükle: boya • [ ] boyut';
         if (VS.tools.byId[t] && VS.tools.byId[t].place) s = t === 'image' && !S.img.pending ? 'Önce soldaki panelden bir görsel seç' : 'Araca ya da tuvale tıkla: yerleştir • Esc: vazgeç';
         if (t === 'picker') s = 'Araca ya da tuvale tıkla: rengi al';
+        if (t === 'sirens') s = 'LED noktasına tıkla: seç • listeden aç/kapat, renk değiştir, yanıp sönmeyi izle';
         $('#hint').textContent = s;
     };
 
@@ -37,7 +38,7 @@
             const vd = await VSVehicle.load(DATA + id + '.lvm.gz');
             S.veh = info; S.vd = vd; S.bbox = vd.header.bbox;
             S.charts = L2.compute(S.bbox.min, S.bbox.max, S.design.size);
-            S.mod.parts = {}; S.mod.hidden = []; S.mod.open = {}; S.mod.extras = {}; S.mod.props = []; S.selProp = null;
+            S.mod.parts = {}; S.mod.hidden = []; S.mod.open = {}; S.mod.extras = {}; S.mod.props = []; S.mod.sirens = { off: {}, col: {} }; S.selProp = null; S.siren.sel = 0;
             S.selBone = -1; S.boneOpen = {};
             vd.header.bones.forEach((b, i) => { if (b.p < 0 || b.p >= vd.header.bones.length || b.p === i || b.p === 0) S.boneOpen[i] = true; });
             VS.scene.setVehicle(vd, S.charts, S.design.size);
@@ -48,6 +49,7 @@
             VS.flushNow();
             try { localStorage.setItem('lvs_last', id); } catch (e) { /* yok say */ }
             VS.updateBoneLabels();
+            if (S.tool === 'sirens') VS.tools.renderOpts();
         } catch (e) {
             console.error(e);
             VS.toast('Araç yüklenemedi: ' + e.message, 'err');
@@ -460,6 +462,7 @@
         S.vehicles = idx.map(v => Object.assign(v, { cat: VSVehicle.category(v) })).sort((a, b) => a.id.localeCompare(b.id));
         S.vehicles.forEach(v => { S.vmap[v.id] = v; });
 
+        try { VS.sirenDB = await (await fetch('../data/sirens.json')).json(); } catch (e) { VS.sirenDB = null; }
         await VS.fontsReady();
         let last = null;
         try { last = localStorage.getItem('lvs_last'); } catch (e) { /* yok say */ }

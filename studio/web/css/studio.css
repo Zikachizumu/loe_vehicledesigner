@@ -304,3 +304,29 @@ select.inp option { background: #15151b; color: var(--txt); }
 .splash .bar i { display: block; height: 100%; width: 40%; background: var(--accent); animation: slide 1s ease-in-out infinite; }
 @keyframes slide { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
 .footer-brand { font-size: 10px; letter-spacing: .2em; color: var(--dim); text-align: center; margin-top: 18px; }
+
+/* Sirenler aracı (Damlalık'ın altındaki ayrı kutu) */
+.tool.box { margin-top: 2px; border-color: rgba(var(--accent-rgb), .38); background: linear-gradient(180deg, rgba(var(--accent-rgb), .13), rgba(var(--accent-rgb), .04)); color: var(--accent-2); }
+.tool.box:hover { background: rgba(var(--accent-rgb), .2); color: #fff; }
+.tool.box.on { background: rgba(var(--accent-rgb), .3); border-color: var(--accent); color: #fff; }
+.sir-sum { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; padding: 7px 9px; border-radius: 6px; background: var(--card); border: 1px solid var(--line); }
+.sir-sum b { font-size: 12px; color: var(--txt); }
+.sir-sum span { font-size: 10.5px; color: var(--dim); }
+.sir-list { display: flex; flex-direction: column; gap: 4px; }
+.sir-row { position: relative; display: flex; align-items: center; gap: 8px; padding: 5px 7px 5px 8px; border-radius: 6px; background: var(--card-2); border: 1px solid var(--line); cursor: pointer; }
+.sir-row:hover { border-color: var(--line-2); }
+.sir-row.sel { border-color: rgba(var(--accent-rgb), .85); background: rgba(var(--accent-rgb), .1); }
+.sir-row.off { opacity: .5; }
+.sir-row .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; background: var(--c, #fff); box-shadow: 0 0 9px var(--c, #fff), inset 0 0 0 1px rgba(255, 255, 255, .35); }
+.sir-row.off .dot { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25); background: transparent; }
+.sir-row .meta { flex: 1; min-width: 0; }
+.sir-row .nm { font-size: 11.5px; font-weight: 700; }
+.sir-row .sb { font-size: 10px; color: var(--dim); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sir-row .pw { color: var(--dim); font-size: 15px; flex: none; }
+.sir-row .pw.on { color: var(--accent-2); }
+.sir-edit { margin: 0 0 4px; padding: 8px; border-radius: 6px; background: rgba(var(--accent-rgb), .05); border: 1px solid rgba(var(--accent-rgb), .3); }
+
+@media (max-height: 960px) { #rail { gap: 3px; padding: 8px 7px; } .tool { min-height: 38px; padding: 4px 2px 3px; gap: 2px; } .rail-sep { margin: 2px 6px; } }
+@media (max-height: 820px) { .tool { min-height: 34px; padding: 3px 2px 2px; } .tool .ic { font-size: 15px; } }
+
+.grid3 .btn.sm { padding: 0 4px; white-space: nowrap; font-size: 10px; }

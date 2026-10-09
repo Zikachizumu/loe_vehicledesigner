@@ -19,6 +19,8 @@ try
             return EquipBuild.Run(args);
         case "mesh3d":
             return Mesh3D.Run(args);
+        case "meta2xml":
+            return Meta2Xml.Run(args);
         case "debugbar":
             return DebugBar.Run(args[1], args[2]);
         case "debugroof":

@@ -2,7 +2,8 @@
 
 Legends of Empire için bağımsız Windows uygulaması (Electron). GTA V'in 937 vanilla aracını 3B gösterir; kemik
 (iskelet) hiyerarşisini, X-ışınını (UV tel kafes), kapı/kaput/bagaj hareketini, parça gizleme/boyama ve livery tasarımını
-sunar. Oyun/FiveM gerekmez.
+sunar. **Sirenler** aracı (Damlalık'ın altında): polis / acil durum araçlarının oyundaki LED'lerini (41 araç, kırmızı-mavi) tek tek
+listelenir; her LED açılıp kapatılır, boyanır, gerçek yanıp sönme desenleriyle önizlenir. Oyun/FiveM gerekmez.
 
 ## Çalıştırma
 
@@ -30,10 +31,24 @@ vdpack mesh3d --yft yft_all --out m_all --all
 # 3) m_all içeriğini studio/data/vehicles/ altına koy
 ```
 
+## Siren (LED) verisi (`studio/data/sirens.json`) — repoda yok (Rockstar varlığı)
+
+Vanilla araçların siren ayarları oyun arşivlerindeki `carcols.ymt` (PSO) + DLC `carcols.meta` (Sirens: LED başına renk,
+yanıp sönme sequencer'ı, dönüş) ve `carvariations` (araç → `sirenSettings`) dosyalarındadır. LED `n` ↔ modeldeki `siren<n>` kemiği.
+
+```bash
+# 1) Windows: meta dosyalarını çıkar (düz XML ya da PSO .ymt)
+python -I tools/packbuilder/extract_meta.py "D:/.../Grand Theft Auto V Enhanced" tools/packbuilder/out/meta tools/packbuilder/CodeWalker/CodeWalker.Core/Resources/magic.dat
+# 2) PSO (.ymt) dosyalarını XML'e çevir — vdpack meta2xml (Linux'ta çalıştır; yerel derleme SAC'a takılır)
+vdpack meta2xml carcols.ymt carcols.xml      # carvariations.ymt için de; çıkan .xml'leri out/meta içine koy
+# 3) sirens.json üret (araç lvm klasörü verilirse LED'i olan araçları listeler)
+python -I tools/packbuilder/build_sirens.py tools/packbuilder/out/meta studio/data/sirens.json studio/data/vehicles
+```
+
 ## Sınama
 
 `tools/smoke.sh <png> <senaryo.js>` paketlenmiş uygulamayı açar, senaryoyu sayfada çalıştırır, ekran görüntüsü alır.
-`tools/selftest.js` uçtan uca 45+ kontrol yapar (fırça, geri al/yinele, şablonlar, dışa aktarma, proje kaydet/aç, 12 araç türü).
+`tools/selftest.js` uçtan uca 55+ kontrol yapar (fırça, geri al/yinele, şablonlar, dışa aktarma, proje kaydet/aç, siren LED'leri ve 41 siren'li araç, 12 araç türü).
 
 ## Dosyalar
 
@@ -45,3 +60,4 @@ vdpack mesh3d --yft yft_all --out m_all --all
 | `web/js/layout.js` | Kutu izdüşümlü tuval yerleşimi (oyun içi `shared/layout.lua` ile aynı) |
 | `web/js/engine.js` | Katman çizim motoru (şekil, metin, görsel, degrade, desen, raster boya) |
 | `web/js/editor2d.js`, `tools.js`, `panels.js`, `main.js` | 2B tuval, araçlar, paneller, dosya/dışa aktarma |
+| `web/js/sirens.js` | Sirenler aracı: LED listesi, açma/kapama, renk, yanıp sönme önizlemesi |

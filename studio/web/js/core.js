@@ -13,7 +13,7 @@
     // ------------------------------------------------------------------ DURUM
     function newDesign() { return { v: 1, size: 4096, base: { color: null }, layers: [] }; }
     function newMod() {
-        return { body: '#2b2f36', finish: 'gloss', tint: 3, rim: '#b9bec6', neon: { on: false, color: '#ff2e93' }, parts: {}, hidden: [], open: {}, extras: {}, props: [] };
+        return { body: '#2b2f36', finish: 'gloss', tint: 3, rim: '#b9bec6', neon: { on: false, color: '#ff2e93' }, parts: {}, hidden: [], open: {}, extras: {}, props: [], sirens: { off: {}, col: {} } };
     }
 
     const S = VS.S = {
@@ -29,6 +29,7 @@
         dirty: false,
         selBone: -1,
         selProp: null, propType: 'lightbar',
+        siren: { play: true, speed: 1, sel: 0 },
         brush: { size: 90, hard: 0.65, opacity: 100, color: '#ff2e93', strength: 55, mirror: false },
         text: { text: 'LOE', font: 'Anton', size: 260, bold: false, italic: false, color: '#ffffff', align: 'center', spacing: 20 },
         shape: { id: 'rounded', color: '#ff2e93' },
@@ -199,13 +200,13 @@
         const e = undoSt.pop();
         if (!e) return;
         redoSt.push(applyEntry(e));
-        updateUndoUi(); VS.renderPanel();
+        updateUndoUi(); VS.renderPanel(); if (S.tool === 'sirens') VS.tools.renderOpts();
     };
     VS.redo = function () {
         const e = redoSt.pop();
         if (!e) return;
         undoSt.push(applyEntry(e));
-        updateUndoUi(); VS.renderPanel();
+        updateUndoUi(); VS.renderPanel(); if (S.tool === 'sirens') VS.tools.renderOpts();
     };
     function updateUndoUi() {
         const u = $('#btnUndo'), r = $('#btnRedo');

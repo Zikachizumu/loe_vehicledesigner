@@ -65,6 +65,9 @@ if not no_data:
             if not os.path.isfile(d) or os.path.getsize(d) != os.path.getsize(s):
                 shutil.copy2(s, d); n += 1
         print('araç verisi:', len(os.listdir(dd)), 'dosya (', n, 'güncellendi )')
+        sj = os.path.join(HERE, 'data', 'sirens.json')
+        if os.path.isfile(sj):
+            shutil.copy2(sj, os.path.join(app, 'data', 'sirens.json')); print('siren verisi: sirens.json')
     else:
         print('UYARI: data/vehicles yok')
 
@@ -78,6 +81,7 @@ Başlatmak için:  "LOE Vehicle Studio.exe"  (ya da masaüstündeki kısayol)
 * Garaj sekmesinden araç seç. İSKELET sekmesinde kemikleri aç/kapat, kapı-kaput-bagaj aç, parçayı gizle ya da ayrı boya.
 * MODİFİYE sekmesi: gövde boyası, cam filmi, jant, neon, ekstralar.
 * Araçlar (soldaki çubuk): fırça, silgi, parmak, bulanık, görsel, metin, şekil, doldur, degrade, şerit, numara, desen, aksesuar (tepe lambası, çakar, spoiler…), şablon, damlalık.
+* SİRENLER (Damlalık'ın altı, R): polis / acil durum araçlarının oyundaki tüm LED'leri tek tek listelenir; aç/kapat, renk değiştir, yanıp sönme desenini izle (41 araç).
 * Dışa aktar: tasarım PNG (4096), UV şablonu, yüzey başına PNG, OBJ, 3B görüntü; proje dosyası (.lvs).
 * Projeler varsayılan olarak  Belgeler\LOE Vehicle Studio  klasörüne kaydedilir. Çalışma 20 sn'de bir otomatik yedeklenir.
 

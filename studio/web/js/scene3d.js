@@ -26,6 +26,26 @@
         return 0xffd9a0;
     }
 
+    // Siren LED'leri için ışıma ve seçim halkası dokuları (tek sefer üretilir)
+    let glowTex = null, ringTex = null;
+    function glowTexture() {
+        if (glowTex) return glowTex;
+        const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+        const x = cv.getContext('2d');
+        const g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+        g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.14, 'rgba(255,255,255,0.9)'); g.addColorStop(0.38, 'rgba(255,255,255,0.3)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+        x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+        return (glowTex = new T.CanvasTexture(cv));
+    }
+    function ringTexture() {
+        if (ringTex) return ringTex;
+        const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+        const x = cv.getContext('2d');
+        x.strokeStyle = '#fff'; x.lineWidth = 7; x.beginPath(); x.arc(64, 64, 54, 0, Math.PI * 2); x.stroke();
+        x.strokeStyle = 'rgba(255,255,255,.35)'; x.lineWidth = 3; x.beginPath(); x.arc(64, 64, 42, 0, Math.PI * 2); x.stroke();
+        return (ringTex = new T.CanvasTexture(cv));
+    }
+
     class Scene3D {
         constructor(container) {
             this.container = container;
@@ -85,6 +105,7 @@
                 requestAnimationFrame(loop);
                 if (this.controls.autoRotate) { this.controls.update(); this.dirty = true; }
                 if (this.propTest && this.propObjs && this.propObjs.size) { this.flashProps(); this.dirty = true; }
+                if (this.sirenPlay && this.sirens && this.sirens.length) { this.updateSirens(); this.dirty = true; }
                 if (!this.dirty) return;
                 this.dirty = false;
                 this.updateSkeleton();
@@ -101,9 +122,26 @@
             this.renderer.setSize(w, h, false);
             this.renderer.domElement.style.width = '100%';
             this.renderer.domElement.style.height = '100%';
-            this.camera.aspect = w / h;
+            const sh = Math.min(this.viewShift || 0, w * 0.5);
+            this.camera.aspect = (w - sh) / h;
+            if (sh > 0) this.camera.setViewOffset(w - sh, h, -sh, 0, w, h); else this.camera.clearViewOffset();
             this.camera.updateProjectionMatrix();
             this.invalidate();
+        }
+
+        // Sol seçenek paneli açıkken sahne merkezini sağa kaydırır (px)
+        setViewShift(px) {
+            px = px || 0;
+            if (px === (this.viewShift || 0)) return;
+            const w = this.container.clientWidth || 1;
+            const k = (w - Math.min(this.viewShift || 0, w * 0.5)) / (w - Math.min(px, w * 0.5));     // aynı çerçeve: görünür genişliğe göre uzaklaş / yaklaş
+            this.viewShift = px;
+            if (this.vd) {
+                const d = this.camera.position.clone().sub(this.controls.target).multiplyScalar(k);
+                this.camera.position.copy(this.controls.target).add(d);
+                this.controls.update();
+            }
+            this.resize();
         }
 
         // ------------------------------------------------------------------ ortam / ışık / zemin
@@ -272,6 +310,7 @@
         // ------------------------------------------------------------------ araç kurulumu
         clearVehicle() {
             if (!this.vd) return;
+            this.clearSirens();
             this.root.traverse(o => {
                 if (o.geometry && !o.userData.sharedGeo) o.geometry.dispose();
             });
@@ -331,6 +370,9 @@
             this.rimMat = std({ color: this.rimColor, metalness: 1, roughness: 0.18 });
             const lightMats = {};
             const lightMat = (col) => lightMats[col] || (lightMats[col] = std({ color: 0x1a1a1a, emissive: col, emissiveIntensity: 1.6, roughness: 0.3, metalness: 0 }));
+            // siren<n> kemiklerinin camı: her LED kendi malzemesini alır (renk / yanıp sönme ayrı ayrı)
+            this.sirenLensMats = {};
+            const sirenLens = (b) => this.sirenLensMats[b] || (this.sirenLensMats[b] = std({ color: 0x15161b, emissive: 0x3b82f6, emissiveIntensity: 1.2, roughness: 0.25, metalness: 0 }));
 
             this.meshes = []; this.paintMeshes = [];
             this.boneMeshes = bones.map(() => []);
@@ -349,7 +391,7 @@
                     mat = g.c === CLASS.GLASS ? this.glassMat
                         : g.c === CLASS.METAL ? this.metalMat
                         : g.c === CLASS.TIRE ? this.tireMat
-                        : g.c === CLASS.LIGHT ? lightMat(lightColor(bones[b].n))
+                        : g.c === CLASS.LIGHT ? (/^siren\d+$/.test(bones[b].n) ? sirenLens(b) : lightMat(lightColor(bones[b].n)))
                         : g.c === CLASS.INTERIOR ? this.interiorMat
                         : g.c === CLASS.DETAIL ? this.detailMat : this.otherMat;
                 }
@@ -763,6 +805,119 @@
         toLocal(point) {
             const p = this.root.worldToLocal(point.clone());
             return [p.x, p.y, p.z];
+        }
+
+        // ------------------------------------------------------------------ siren LED'leri
+        // set: sirens.json içindeki siren seti (null → LED yok);  st: { off: {n:true}, col: {n:'#hex'} } kullanıcı değişiklikleri
+        clearSirens() {
+            for (const s of this.sirens || []) { if (s.sprite.parent) s.sprite.parent.remove(s.sprite); s.sprite.material.dispose(); }
+            if (this.sirenRing) { if (this.sirenRing.parent) this.sirenRing.parent.remove(this.sirenRing); this.sirenRing.material.dispose(); }
+            this.sirens = []; this.sirenSet = null; this.sirenRing = null;
+        }
+
+        setSirens(set, st) {
+            if (!this.vd) return;
+            st = st || { off: {}, col: {} };
+            if (set !== this.sirenSet || !this.sirens) {
+                this.clearSirens();
+                this.sirenSet = set;
+                if (set) {
+                    const bones = this.vd.header.bones, idx = {};
+                    bones.forEach((b, i) => { idx[b.n] = i; });
+                    for (const led of set.L) {
+                        const bi = idx['siren' + led.n];
+                        if (bi === undefined) continue;
+                        const sp = new T.Sprite(new T.SpriteMaterial({ map: glowTexture(), color: led.c, transparent: true, blending: T.AdditiveBlending, depthWrite: false }));
+                        sp.renderOrder = 12;
+                        this.boneGroups[bi].add(sp);
+                        this.sirens.push({ led, n: led.n, bone: bi, sprite: sp, lens: this.sirenLensMats[bi] || null, color: new T.Color(led.c), off: false, k: 1,
+                            size: Math.min(0.6, Math.max(0.16, 0.16 + 0.22 * Math.min(led.z || 1, 2))) });
+                    }
+                    this.sirens.sort((a, b) => a.n - b.n);
+                }
+            }
+            for (const s of this.sirens) { s.off = !!st.off[s.n]; s.color.set(st.col[s.n] || s.led.c); }
+            this.updateSirens();
+            this.invalidate();
+        }
+
+        // Her LED'in parlaklığı (0..1): kapalı → 0; animasyon kapalıysa sürekli yanık; açıksa sequencer deseni / dönen far
+        updateSirens() {
+            if (!this.sirens || !this.sirens.length) return;
+            const set = this.sirenSet, sp = this.sirenSpeed || 1;
+            const t = performance.now() / 1000;
+            const bit = 60 / Math.max(30, (set ? set.b * (set.t || 1) : 200)) / 2 / sp;     // bir sequencer biti (sn)
+            const bi = Math.floor(t / bit) & 31;
+            const emph = this.sirenEmph;
+            for (const s of this.sirens) {
+                const led = s.led;
+                let k = 1;
+                if (s.off) k = 0;
+                else if (this.sirenPlay) {
+                    if (led.f) k = (led.q >>> bi) & 1;
+                    else if (led.r) { const a = (led.a || 0) + (led.d ? -1 : 1) * t * (led.s || 1) * Math.PI * 2 * sp * 0.8; k = Math.pow(0.5 + 0.5 * Math.cos(a), 2.2); }
+                }
+                s.k = k;
+                const hidden = this.hidden.has(s.bone);
+                const spr = s.sprite;
+                spr.visible = !hidden && k > 0.02;
+                spr.material.color.copy(s.color);
+                spr.material.opacity = k * (emph ? 1 : 0.75);
+                spr.scale.setScalar(s.size * (emph ? 1 : 0.55) * (0.62 + 0.38 * k));
+                if (s.lens) { s.lens.emissive.copy(s.color); s.lens.emissiveIntensity = 0.06 + 2.9 * k; }
+            }
+            if (this.sirenRing) {
+                const s = this.sirens.find(x => x.n === this.sirenSel);
+                this.sirenRing.visible = !!s && !this.hidden.has(s.bone);
+                if (s) { if (this.sirenRing.parent !== s.sprite.parent) s.sprite.parent.add(this.sirenRing); this.sirenRing.scale.setScalar(0.17 + 0.012 * Math.sin(t * 6)); this.sirenRing.material.color.copy(s.color).lerp(new T.Color(0xffffff), 0.55); }
+            }
+        }
+
+        setSirenMode(play, emph, speed) {
+            this.sirenPlay = !!play; this.sirenEmph = !!emph; this.sirenSpeed = speed || 1;
+            this.updateSirens();
+            this.invalidate();
+        }
+
+        selectSiren(n) {
+            this.sirenSel = n || 0;
+            if (n && !this.sirenRing && this.sirens && this.sirens.length) {
+                this.sirenRing = new T.Sprite(new T.SpriteMaterial({ map: ringTexture(), color: 0xffffff, transparent: true, depthTest: false, depthWrite: false }));
+                this.sirenRing.renderOrder = 30;
+            }
+            this.updateSirens();
+            this.invalidate();
+        }
+
+        // Ekran konumuna en yakın LED (px içinde) → siren numarası, yoksa 0
+        nearestSiren(clientX, clientY, maxPx) {
+            if (!this.sirens || !this.sirens.length) return 0;
+            this.scene.updateMatrixWorld(true);
+            this.camera.updateMatrixWorld(true);
+            const rect = this.renderer.domElement.getBoundingClientRect();
+            const v = new T.Vector3();
+            let best = 0, bd = (maxPx || 20) ** 2;
+            for (const s of this.sirens) {
+                if (this.hidden.has(s.bone)) continue;
+                s.sprite.getWorldPosition(v).project(this.camera);
+                if (v.z > 1) continue;
+                const sx = rect.left + (v.x * 0.5 + 0.5) * rect.width, sy = rect.top + (-v.y * 0.5 + 0.5) * rect.height;
+                const d = (sx - clientX) ** 2 + (sy - clientY) ** 2;
+                if (d < bd) { bd = d; best = s.n; }
+            }
+            return best;
+        }
+
+        focusSiren(n) {
+            const s = this.sirens && this.sirens.find(x => x.n === n);
+            if (!s) return;
+            this.scene.updateMatrixWorld(true);
+            const p = s.sprite.getWorldPosition(new T.Vector3());
+            const dir = this.camera.position.clone().sub(this.controls.target).normalize();
+            this.controls.target.copy(p);
+            this.camera.position.copy(p).addScaledVector(dir, Math.max(this.controls.minDistance, 1.9));
+            this.controls.update();
+            this.invalidate();
         }
 
         // ------------------------------------------------------------------ aksesuarlar (prop)

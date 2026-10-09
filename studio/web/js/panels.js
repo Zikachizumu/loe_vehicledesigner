@@ -314,6 +314,7 @@
         }
         sc.clearProps();
         for (const rec of m.props || []) sc.addProp(rec);
+        VS.applySirens && VS.applySirens();
         sc.applyXray();
         if (VS.v2) VS.v2.invalidate();
     };
