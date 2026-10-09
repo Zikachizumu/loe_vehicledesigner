@@ -7,7 +7,7 @@
 * resources/app  : bu klasörün main.js, preload.js, package.json, web/ ve data/ dosyaları
 --app-only: yalnızca resources/app güncellenir (hızlı).
 """
-import os, shutil, sys
+import json, os, shutil, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ELECTRON = os.path.join(HERE, 'dist', 'electron')
@@ -71,6 +71,7 @@ if not no_data:
     else:
         print('UYARI: data/vehicles yok')
 
+json.dump({'repo': os.path.dirname(HERE), 'python': sys.executable}, open(os.path.join(app, 'gamepack.json'), 'w', encoding='utf-8'))
 open(os.path.join(out, 'OKU.txt'), 'w', encoding='utf-8').write(
 """LOE VEHICLE STUDIO  —  Legends of Empire Roleplay
 =================================================

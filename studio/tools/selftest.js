@@ -133,6 +133,10 @@
     const projK = JSON.stringify(VS.project(false)); ok('proje kit içeriyor', projK.includes('"sirenKit"') && projK.includes('"zo"'));
     S.dirty = false; await VS.loadProjectText(projK); await wait(500);
     ok('kit proje ile geri yüklendi', S.veh.id === 'adder' && S.mod.sirenKit && sc.sirens.length === 16 && Math.abs(sc.sirens.find(s => s.n === rs.n).sprite.position.y - y0 - 0.1) < 1e-4);
+    S.tab = 'export'; VS.renderTabs(); VS.renderPanel(); await wait(100);
+    const gpCard = Array.from(document.querySelectorAll('.card')).find(c => c.textContent.includes('FiveM oyun paketi'));
+    ok('FiveM oyun paketi kartı', !!gpCard && gpCard.querySelector('.inp').value === 'govadder' && !gpCard.querySelector('.btn.pri').disabled && !gpCard.textContent.includes('null'), gpCard && gpCard.querySelector('.inp').value);
+    S.tab = 'layers'; VS.renderTabs(); VS.renderPanel();
     S.siren.play = true; VS.syncSirenMode(); const kk = new Set(); for (let i = 0; i < 30; i++) { await wait(45); sc.updateSirens(); kk.add(sc.sirens.map(s => s.k.toFixed(1)).join('')); }
     ok('kit LED\'leri yanıp sönüyor', kk.size > 2, kk.size + ' durum'); S.siren.play = false; VS.syncSirenMode();
     const saved0 = Object.keys(saved).length; await VS.exportSirens(); const sj = Object.keys(saved).find(k => k.endsWith('_sirenler.json'));

@@ -549,6 +549,45 @@
             h('button', { class: 'btn', style: { width: '100%' }, html: icon('cube') + ' OBJ (araç + UV) dışa aktar', onclick: () => VS.exportObj() }),
             h('button', { class: 'btn', style: { width: '100%', marginTop: '6px' }, html: icon('siren') + ' Siren yapılandırması (.json)', title: 'LED konumları, renkleri ve desenleri', onclick: () => VS.exportSirens() }),
             h('div', { class: 'card-note', style: { marginTop: '8px', fontSize: '10.5px', color: 'var(--dim)', lineHeight: '1.5' }, text: 'Boya yüzeyleri kutu izdüşümüyle UV alır; tasarım PNG’si bu UV’ye birebir oturur.' }))));
+        body.append(gamePackCard());
         body.append(h('div', { class: 'footer-brand', text: 'LEGENDS OF EMPIRE ROLEPLAY' }));
+    }
+
+    // ------------------------------------------------------------------ FiveM oyun paketi (siren'li araç)
+    const GP = { name: '', deploy: false, running: false, log: '', dir: '' };
+    function gamePackCard() {
+        const m = S.mod, id = S.veh && S.veh.id;
+        const hasKit = !!(m.sirenKit && m.sirenKit.leds && m.sirenKit.leds.length);
+        const nat = VS.sirenSetFor && VS.sirenSetFor(id);
+        const natChanged = !!(nat && m.sirens && (Object.keys(m.sirens.off || {}).length || Object.keys(m.sirens.col || {}).length));
+        const ready = hasKit || natChanged;
+        if (!GP.name || GP.vid !== id) { GP.name = 'gov' + (id || 'arac').replace(/[^a-z0-9]/g, '').slice(0, 14); GP.vid = id; }
+        const wrap = h('div');
+        const inp = h('input', { class: 'inp', value: GP.name, maxlength: 19, spellcheck: 'false' });
+        inp.addEventListener('input', () => { GP.name = inp.value.toLowerCase().replace(/[^a-z0-9]/g, ''); });
+        const log = h('pre', { class: 'gp-log', text: GP.log || '' });
+        log.style.display = GP.log ? 'block' : 'none';
+        const btn = h('button', { class: 'btn pri', style: { width: '100%' }, disabled: ready && !GP.running ? null : true, html: icon('siren') + (GP.running ? ' Üretiliyor…' : ' Oyun paketi oluştur') });
+        btn.addEventListener('click', async () => {
+            if (!VS.bridge || !VS.bridge.buildGamePack) { VS.toast('Oyun paketi yalnızca masaüstü uygulamasında üretilir', 'err'); return; }
+            if (!/^[a-z][a-z0-9]{2,18}$/.test(GP.name)) { VS.toast('Model adı: 3-19 karakter, küçük harf ve rakam (örn. govvectre)', 'err'); return; }
+            GP.running = true; GP.log = ''; GP.dir = ''; VS.renderPanel(true);
+            VS.bridge.onGamePackLog && VS.bridge.onGamePackLog(t => { GP.log += t; const el = document.querySelector('.gp-log'); if (el) { el.style.display = 'block'; el.textContent = GP.log; el.scrollTop = el.scrollHeight; } });
+            let r;
+            try { r = await VS.bridge.buildGamePack(JSON.stringify(VS.project(false)), GP.name, GP.deploy); } catch (e) { r = { ok: false, log: String(e) }; }
+            GP.running = false; GP.log = r.log || GP.log; GP.dir = r.ok ? r.dir : '';
+            VS.toast(r.ok ? 'Oyun paketi hazır' + (r.deployed ? ' ve sunucuya konuldu' : '') : 'Oyun paketi üretilemedi — günlüğe bak', r.ok ? 'ok' : 'err');
+            VS.renderPanel(true);
+        });
+        wrap.append(...[
+            lbl('Yeni model (spawn) adı'), inp,
+            h('div', { class: 'row', style: { marginTop: '8px' } },
+                h('button', { class: 'btn sm' + (GP.deploy ? ' on' : ''), text: 'Sunucuya koy ([disabled])', title: 'Kaynağı sunucuda resources/[disabled] altına yükler; başlatılmaz', onclick: function () { GP.deploy = !GP.deploy; this.classList.toggle('on', GP.deploy); } })),
+            h('div', { style: { marginTop: '8px' } }, btn),
+            ready ? null : h('div', { class: 'card-note', style: { marginTop: '8px', fontSize: '10.5px', color: 'var(--dim)', lineHeight: '1.5' }, text: 'Önce Sirenler aracında "Kit tak" ile LED ekle (ya da polis aracında LED renklerini değiştir).' }),
+            log,
+            GP.dir ? h('div', { class: 'row', style: { marginTop: '8px' } }, h('button', { class: 'btn sm', html: icon('folder') + ' Klasörü aç', onclick: () => VS.bridge.reveal(GP.dir) })) : null,
+            h('div', { class: 'card-note', style: { marginTop: '8px', fontSize: '10.5px', color: 'var(--dim)', lineHeight: '1.5' }, text: 'Araç, siren kemikleri eklenmiş kopya model olarak üretilir (FiveM Enhanced). Orijinal araç değişmez. Sunucuda: txAdmin konsolunda refresh + ensure <kaynak>.' })].filter(Boolean));
+        return card('FiveM oyun paketi', 'siren', wrap);
     }
 })();

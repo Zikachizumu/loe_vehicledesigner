@@ -4,6 +4,7 @@ const { app, BrowserWindow, protocol, net, ipcMain, dialog, shell, Menu } = requ
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
+const { spawn } = require('child_process');
 
 const ROOT = __dirname;
 const SMOKE = process.env.LVS_SMOKE || '';          // test: yüklenince ekran görüntüsü alıp çık
@@ -122,6 +123,33 @@ app.whenReady().then(() => {
         fs.writeFileSync(SMOKE.replace(/\.png$/, '') + '_' + String(name).replace(/[^\w-]/g, '') + '.png', img.toPNG());
         return true;
     });
+    // FiveM oyun paketi: Studio projesinden siren'li araç kaynağı üretir (tools/packbuilder/make_siren_vehicle.py; kemik ekleme VPS'te CodeWalker ile yapılır)
+    let gpBusy = false;
+    ipcMain.handle('build-gamepack', (e, text, name, deploy) => new Promise((resolve) => {
+        if (gpBusy) return resolve({ ok: false, log: 'Başka bir paket üretiliyor…' });
+        let cfg = null;
+        try { cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'gamepack.json'), 'utf8')); } catch (err) { /* yok say */ }
+        const script = cfg && path.join(cfg.repo, 'tools', 'packbuilder', 'make_siren_vehicle.py');
+        if (!script || !fs.existsSync(script)) return resolve({ ok: false, log: 'Paket üretici bulunamadı (gamepack.json / make_siren_vehicle.py). Uygulamayı build.py ile yeniden paketle.' });
+        const outDir = path.join(docsDir(), 'Oyun Paketleri');
+        const proj = path.join(app.getPath('userData'), 'gamepack.lvs');
+        try { fs.mkdirSync(outDir, { recursive: true }); fs.writeFileSync(proj, text); } catch (err) { return resolve({ ok: false, log: 'Yazılamadı: ' + err.message }); }
+        const args = ['-I', '-u', script, proj, '--name', String(name), '--out', outDir];
+        if (deploy) args.push('--deploy');
+        gpBusy = true;
+        let log = '';
+        const send = (t) => { log += t; try { e.sender.send('gamepack-log', t); } catch (err) { /* pencere kapandı */ } };
+        const p = spawn(cfg.python || 'python', args, { windowsHide: true, cwd: path.dirname(script), env: Object.assign({}, process.env, { PYTHONIOENCODING: 'utf-8' }) });
+        p.stdout.on('data', d => send(d.toString('utf8')));
+        p.stderr.on('data', d => send(d.toString('utf8')));
+        p.on('error', err => { gpBusy = false; resolve({ ok: false, log: log + '\nPython başlatılamadı: ' + err.message }); });
+        p.on('close', (code) => {
+            gpBusy = false;
+            const m = /kaynak hazır: (.+)/.exec(log);
+            resolve({ ok: code === 0, log, dir: m ? m[1].trim() : path.join(outDir, 'loe_veh_' + name), deployed: /sunucuya konuldu/.test(log) });
+        });
+    }));
+    ipcMain.handle('reveal', (e, p) => { try { if (p && fs.existsSync(p)) { shell.openPath(p); return true; } } catch (err) { /* yok say */ } return false; });
     ipcMain.handle('app-info', () => ({ version: app.getVersion(), electron: process.versions.electron }));
     createWindow();
 });

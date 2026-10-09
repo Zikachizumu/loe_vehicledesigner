@@ -47,6 +47,20 @@ vdpack meta2xml carcols.ymt carcols.xml      # carvariations.ymt için de; çık
 python -I tools/packbuilder/build_sirens.py tools/packbuilder/out/meta studio/data/sirens.json studio/data/vehicles
 ```
 
+## FiveM oyun paketi (siren'li araç)
+
+Dışa aktar sekmesi → **FiveM oyun paketi**: Studio'daki araç + siren kiti, FiveM Enhanced'da çalışacak bir **kopya model** olarak paketlenir
+(`govvectre` gibi yeni spawn adı; orijinal araç değişmez). Arkasında `tools/packbuilder/make_siren_vehicle.py` çalışır:
+
+1. Enhanced kurulumundan aracın resmî gen9 `yft`/`_hi.yft`/`ytd` dosyalarını çıkarır,
+2. VPS'te (`vdpack sirenveh`, CodeWalker) yft iskeletine kit LED'leri için `siren<n>` kemiklerini ekler (konumlar Studio'daki yerleşim),
+3. `carcols.meta` (siren ayarı: oyundaki orijinal polis düzeninden renk / desen / korona), `vehicles.meta`, `carvariations.meta`, `fxmanifest.lua` yazar,
+4. çıktıyı `Belgeler\LOE Vehicle Studio\Oyun Paketleri\loe_veh_<ad>` içine koyar; "Sunucuya koy" açıksa sunucuda `resources/[disabled]` altına da yükler (BAŞLATILMAZ).
+
+Sunucuda başlatma (canlı sunucuya dokunmadan önce bir istemciyle test et): `[disabled]` içindeki klasörü `[loe]` altına taşı, txAdmin konsolunda `refresh` + `ensure loe_veh_<ad>`.
+Komut satırından: `python -I tools/packbuilder/make_siren_vehicle.py proje.lvs --name govvectre [--deploy]`.
+Gereken: `studio/data/sirens.json` + `sirens_raw.json` (`build_sirens.py`), `tools/packbuilder/out/meta` (extract_meta.py + `vdpack meta2xml`), VPS'te `/root/loe_vd_build/linux/vdpack`.
+
 ## Sınama
 
 `tools/smoke.sh <png> <senaryo.js>` paketlenmiş uygulamayı açar, senaryoyu sayfada çalıştırır, ekran görüntüsü alır.

@@ -21,6 +21,14 @@ try
             return Mesh3D.Run(args);
         case "meta2xml":
             return Meta2Xml.Run(args);
+        case "bones":
+            return SirenVeh.Bones(args);
+        case "sirenveh":
+            return SirenVeh.Run(args);
+        case "yft2xml":
+            return SirenVeh.Yft2Xml(args);
+        case "gen9file":
+            return SirenVeh.Gen9File(args);
         case "debugbar":
             return DebugBar.Run(args[1], args[2]);
         case "debugroof":

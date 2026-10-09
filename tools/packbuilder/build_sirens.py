@@ -73,6 +73,7 @@ def main():
     lvm = sys.argv[3] if len(sys.argv) > 3 else None
     files = sorted(glob.glob(os.path.join(src, '*')), key=lambda p: (prio(p), p))
     sets, veh, dup = {}, {}, 0
+    rawsets = {}
     for p in files:
         n = os.path.basename(p).lower()
         if not (n.endswith('.meta') or n.endswith('.xml')):
@@ -94,6 +95,7 @@ def main():
                 if sid in sets and json.dumps(sets[sid], sort_keys=True) != json.dumps(s, sort_keys=True):
                     dup += 1
                 sets[sid] = s
+                rawsets[sid] = ET.tostring(it, encoding='unicode')
         elif 'carvariations' in n:
             r = load(p)
             if r is None:
@@ -135,6 +137,7 @@ def main():
         for m, nm, n in rows:
             if re.match(r'(police|polic|sheriff|fbi|riot|pol|pranger|lguard|ambulance|firetruk)', m):
                 print('  %-14s %-26s %2d LED' % (m, nm, n))
+    json.dump({k: v for k, v in rawsets.items() if k in used}, open(os.path.join(os.path.dirname(os.path.abspath(out)), 'sirens_raw.json'), 'w', encoding='utf-8'))
     json.dump({'v': 2, 'sets': sets, 'veh': veh, 'kits': kits}, open(out, 'w', encoding='utf-8'), separators=(',', ':'), ensure_ascii=False)
     print('siren seti: %d  araç: %d  kit: %d  çakışan id: %d  eksik set: %s  -> %s (%d bayt)' % (len(sets), len(veh), len(kits), dup, missing, out, os.path.getsize(out)))
 
