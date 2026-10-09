@@ -330,3 +330,6 @@ select.inp option { background: #15151b; color: var(--txt); }
 @media (max-height: 820px) { .tool { min-height: 34px; padding: 3px 2px 2px; } .tool .ic { font-size: 15px; } }
 
 .grid3 .btn.sm { padding: 0 4px; white-space: nowrap; font-size: 10px; }
+
+#opts .sl .nm { width: 18px; }
+#opts .sl .v { width: 52px; }

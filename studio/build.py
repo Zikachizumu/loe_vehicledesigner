@@ -82,6 +82,7 @@ Başlatmak için:  "LOE Vehicle Studio.exe"  (ya da masaüstündeki kısayol)
 * MODİFİYE sekmesi: gövde boyası, cam filmi, jant, neon, ekstralar.
 * Araçlar (soldaki çubuk): fırça, silgi, parmak, bulanık, görsel, metin, şekil, doldur, degrade, şerit, numara, desen, aksesuar (tepe lambası, çakar, spoiler…), şablon, damlalık.
 * SİRENLER (Damlalık'ın altı, R): polis / acil durum araçlarının oyundaki tüm LED'leri tek tek listelenir; aç/kapat, renk değiştir, yanıp sönme desenini izle (41 araç).
+  "Kit tak" sekmesi: bu siren düzenlerinden birini herhangi bir araca (ör. Adder) tak; tavan/ön/arka bölgelerini ve tek tek LED'leri araca göre ayarla.
 * Dışa aktar: tasarım PNG (4096), UV şablonu, yüzey başına PNG, OBJ, 3B görüntü; proje dosyası (.lvs).
 * Projeler varsayılan olarak  Belgeler\LOE Vehicle Studio  klasörüne kaydedilir. Çalışma 20 sn'de bir otomatik yedeklenir.
 

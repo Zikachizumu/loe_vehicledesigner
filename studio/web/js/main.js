@@ -38,7 +38,7 @@
             const vd = await VSVehicle.load(DATA + id + '.lvm.gz');
             S.veh = info; S.vd = vd; S.bbox = vd.header.bbox;
             S.charts = L2.compute(S.bbox.min, S.bbox.max, S.design.size);
-            S.mod.parts = {}; S.mod.hidden = []; S.mod.open = {}; S.mod.extras = {}; S.mod.props = []; S.mod.sirens = { off: {}, col: {} }; S.selProp = null; S.siren.sel = 0;
+            S.mod.parts = {}; S.mod.hidden = []; S.mod.open = {}; S.mod.extras = {}; S.mod.props = []; S.mod.sirens = { off: {}, col: {} }; S.mod.sirenKit = null; S.selProp = null; S.siren.sel = 0; S.siren.tab = null;
             S.selBone = -1; S.boneOpen = {};
             vd.header.bones.forEach((b, i) => { if (b.p < 0 || b.p >= vd.header.bones.length || b.p === i || b.p === 0) S.boneOpen[i] = true; });
             VS.scene.setVehicle(vd, S.charts, S.design.size);

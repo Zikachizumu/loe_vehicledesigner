@@ -3,7 +3,9 @@
 Legends of Empire için bağımsız Windows uygulaması (Electron). GTA V'in 937 vanilla aracını 3B gösterir; kemik
 (iskelet) hiyerarşisini, X-ışınını (UV tel kafes), kapı/kaput/bagaj hareketini, parça gizleme/boyama ve livery tasarımını
 sunar. **Sirenler** aracı (Damlalık'ın altında): polis / acil durum araçlarının oyundaki LED'lerini (41 araç, kırmızı-mavi) tek tek
-listelenir; her LED açılıp kapatılır, boyanır, gerçek yanıp sönme desenleriyle önizlenir. Oyun/FiveM gerekmez.
+listelenir; her LED açılıp kapatılır, boyanır, gerçek yanıp sönme desenleriyle önizlenir. **Kit tak** sekmesiyle oyundaki herhangi bir siren
+düzeni (41 araç) başka bir araca (ör. Adder) takılır: tavan / ön / arka LED'ler araç yüzeyine oturur, bölge ve LED konumları ince ayarlanır,
+kit projeyle kaydedilir, siren yapılandırması (.json) dışa aktarılır. Oyun/FiveM gerekmez.
 
 ## Çalıştırma
 
@@ -60,4 +62,4 @@ python -I tools/packbuilder/build_sirens.py tools/packbuilder/out/meta studio/da
 | `web/js/layout.js` | Kutu izdüşümlü tuval yerleşimi (oyun içi `shared/layout.lua` ile aynı) |
 | `web/js/engine.js` | Katman çizim motoru (şekil, metin, görsel, degrade, desen, raster boya) |
 | `web/js/editor2d.js`, `tools.js`, `panels.js`, `main.js` | 2B tuval, araçlar, paneller, dosya/dışa aktarma |
-| `web/js/sirens.js` | Sirenler aracı: LED listesi, açma/kapama, renk, yanıp sönme önizlemesi |
+| `web/js/sirens.js` | Sirenler aracı: LED listesi, açma/kapama, renk, yanıp sönme önizlemesi, kit takma (başka araca), siren .json dışa aktarma |

@@ -812,15 +812,25 @@
         clearSirens() {
             for (const s of this.sirens || []) { if (s.sprite.parent) s.sprite.parent.remove(s.sprite); s.sprite.material.dispose(); }
             if (this.sirenRing) { if (this.sirenRing.parent) this.sirenRing.parent.remove(this.sirenRing); this.sirenRing.material.dispose(); }
-            this.sirens = []; this.sirenSet = null; this.sirenRing = null;
+            for (const s of this.sirens || []) if (s.kit && s.lens) s.lens.dispose();
+            if (this.kitGroup) {
+                if (this.kitGroup.parent) this.kitGroup.parent.remove(this.kitGroup);
+                if (this.kitBox) this.kitBox.dispose();
+                if (this.kitHouseMat) this.kitHouseMat.dispose();
+            }
+            this.kitGroup = this.kitBox = this.kitHouseMat = this.kitHousing = null;
+            this.sirens = []; this.sirenSet = null; this.sirenRing = null; this.sirenKitSig = '';
         }
 
-        setSirens(set, st) {
+        // kit: araca sonradan takılan LED'ler { leds: [{ n, zone, p:[x,y,z], led }], zo: {zone:[dx,dy,dz]}, lo: {n:[dx,dy,dz]}, housing: {zone:true} }
+        setSirens(set, st, kit) {
             if (!this.vd) return;
             st = st || { off: {}, col: {} };
-            if (set !== this.sirenSet || !this.sirens) {
+            const sig = kit ? kit.leds.map(l => l.n).join(',') + '|' + Object.keys(kit.housing || {}).filter(z => kit.housing[z]).join(',') : '';
+            if (set !== this.sirenSet || !this.sirens || sig !== this.sirenKitSig) {
                 this.clearSirens();
                 this.sirenSet = set;
+                this.sirenKitSig = sig;
                 if (set) {
                     const bones = this.vd.header.bones, idx = {};
                     bones.forEach((b, i) => { idx[b.n] = i; });
@@ -833,12 +843,95 @@
                         this.sirens.push({ led, n: led.n, bone: bi, sprite: sp, lens: this.sirenLensMats[bi] || null, color: new T.Color(led.c), off: false, k: 1,
                             size: Math.min(0.6, Math.max(0.16, 0.16 + 0.22 * Math.min(led.z || 1, 2))) });
                     }
-                    this.sirens.sort((a, b) => a.n - b.n);
                 }
+                if (kit) this.buildKit(kit);
+                this.sirens.sort((a, b) => a.n - b.n);
             }
+            if (kit) this.placeKit(kit);
             for (const s of this.sirens) { s.off = !!st.off[s.n]; s.color.set(st.col[s.n] || s.led.c); }
             this.updateSirens();
             this.invalidate();
+        }
+
+        // Takılan kit: her LED küçük bir mercek kutusu + ışıma; isteğe bağlı koyu taban (ışık çubuğu gövdesi)
+        buildKit(kit) {
+            const g = this.kitGroup = new T.Group();
+            this.root.add(g);
+            this.kitBox = new T.BoxGeometry(1, 1, 1);
+            this.kitHouseMat = new T.MeshStandardMaterial({ color: 0x131419, metalness: 0.6, roughness: 0.4 });
+            for (const l of kit.leds) {
+                const led = l.led;
+                const mat = new T.MeshStandardMaterial({ color: 0x15161b, emissive: led.c, emissiveIntensity: 1.2, roughness: 0.25, metalness: 0 });
+                const mesh = new T.Mesh(this.kitBox, mat);
+                mesh.scale.set(0.09, 0.06, 0.034);
+                mesh.castShadow = true;
+                mesh.userData.sharedGeo = true;
+                g.add(mesh);
+                const sp = new T.Sprite(new T.SpriteMaterial({ map: glowTexture(), color: led.c, transparent: true, blending: T.AdditiveBlending, depthWrite: false }));
+                sp.renderOrder = 12;
+                g.add(sp);
+                this.sirens.push({ led, n: l.n, bone: -1, sprite: sp, mesh, lens: mat, kit: true, zone: l.zone, rec: l, color: new T.Color(led.c), off: false, k: 1,
+                    size: Math.min(0.6, Math.max(0.16, 0.16 + 0.22 * Math.min(led.z || 1, 2))) });
+            }
+            this.kitHousing = {};
+            for (const z of Object.keys(kit.housing || {})) {
+                if (!kit.housing[z]) continue;
+                const m = new T.Mesh(this.kitBox, this.kitHouseMat);
+                m.userData.sharedGeo = true; m.castShadow = true;
+                g.add(m);
+                this.kitHousing[z] = m;
+            }
+        }
+
+        // Kit LED konumları: taban konum + bölge kaydırması + LED kaydırması
+        placeKit(kit) {
+            const zo = kit.zo || {}, lo = kit.lo || {};
+            const ext = {};
+            for (const s of this.sirens) {
+                if (!s.kit) continue;
+                s.rec = kit.leds.find(l => l.n === s.n) || s.rec;
+                const a = s.rec.p, b = zo[s.zone] || [0, 0, 0], c = lo[s.n] || [0, 0, 0];
+                const x = a[0] + b[0] + c[0], y = a[1] + b[1] + c[1], z = a[2] + b[2] + c[2];
+                s.sprite.position.set(x, y, z); s.mesh.position.set(x, y, z);
+                const e = ext[s.zone] || (ext[s.zone] = [1e9, 1e9, 1e9, -1e9, -1e9]);
+                e[0] = Math.min(e[0], x); e[1] = Math.min(e[1], y); e[2] = Math.min(e[2], z); e[3] = Math.max(e[3], x); e[4] = Math.max(e[4], y);
+            }
+            for (const z in this.kitHousing || {}) {
+                const e = ext[z], m = this.kitHousing[z];
+                if (!e) { m.visible = false; continue; }
+                m.visible = true;
+                m.scale.set(Math.max(0.22, e[3] - e[0] + 0.16), Math.max(0.16, e[4] - e[1] + 0.12), 0.036);
+                m.position.set((e[0] + e[3]) / 2, (e[1] + e[4]) / 2, e[2] - 0.028);
+            }
+        }
+
+        // Tavanın en yüksek noktası (orta eksen): LED kitinin yerleşeceği yer
+        roofPeak() {
+            const bb = this.bbox, cy = (bb.min[1] + bb.max[1]) / 2, L = bb.max[1] - bb.min[1];
+            let best = null;
+            for (let i = -6; i <= 6; i++) {
+                const y = cy + i * L * 0.05;
+                const h = this.surfaceAt(0, y);
+                if (!h) continue;
+                const p = this.toLocal(h.point);
+                if (!best || p[2] > best.z + 0.004) best = { y: p[1], z: p[2] };
+            }
+            return best || { y: cy, z: bb.max[2] };
+        }
+
+        // Arka tampondan ileri doğru yatay ışın (x, z araç uzayında)
+        surfaceRear(x, z) {
+            if (!this.vd) return null;
+            this.scene.updateMatrixWorld(true);
+            const bb = this.bbox;
+            const o = this.root.localToWorld(new T.Vector3(x, bb.min[1] - 1.5, z));
+            const t = this.root.localToWorld(new T.Vector3(x, bb.min[1] + 0.5, z));
+            this.raycaster.set(o, t.sub(o).normalize());
+            const list = this.meshes.filter(m => m.visible && m.userData.cls !== CLASS.GLASS && !this.hidden.has(m.userData.bone));
+            const hits = this.raycaster.intersectObjects(list, false);
+            if (!hits.length) return null;
+            const h = hits[0];
+            return { bone: h.object.userData.bone, cls: h.object.userData.cls, point: h.point };
         }
 
         // Her LED'in parlaklığı (0..1): kapalı → 0; animasyon kapalıysa sürekli yanık; açıksa sequencer deseni / dönen far
@@ -861,6 +954,7 @@
                 const hidden = this.hidden.has(s.bone);
                 const spr = s.sprite;
                 spr.visible = !hidden && k > 0.02;
+                if (s.mesh) s.mesh.visible = !hidden;
                 spr.material.color.copy(s.color);
                 spr.material.opacity = k * (emph ? 1 : 0.75);
                 spr.scale.setScalar(s.size * (emph ? 1 : 0.55) * (0.62 + 0.38 * k));
@@ -869,7 +963,7 @@
             if (this.sirenRing) {
                 const s = this.sirens.find(x => x.n === this.sirenSel);
                 this.sirenRing.visible = !!s && !this.hidden.has(s.bone);
-                if (s) { if (this.sirenRing.parent !== s.sprite.parent) s.sprite.parent.add(this.sirenRing); this.sirenRing.scale.setScalar(0.17 + 0.012 * Math.sin(t * 6)); this.sirenRing.material.color.copy(s.color).lerp(new T.Color(0xffffff), 0.55); }
+                if (s) { if (this.sirenRing.parent !== s.sprite.parent) s.sprite.parent.add(this.sirenRing); this.sirenRing.position.copy(s.sprite.position); this.sirenRing.scale.setScalar(0.17 + 0.012 * Math.sin(t * 6)); this.sirenRing.material.color.copy(s.color).lerp(new T.Color(0xffffff), 0.55); }
             }
         }
 

@@ -547,6 +547,7 @@
                 h('button', { class: 'btn', html: icon('cube') + ' 3B görüntü PNG', onclick: () => VS.exportRender() })))));
         body.append(card('Model', 'cube', h('div', null,
             h('button', { class: 'btn', style: { width: '100%' }, html: icon('cube') + ' OBJ (araç + UV) dışa aktar', onclick: () => VS.exportObj() }),
+            h('button', { class: 'btn', style: { width: '100%', marginTop: '6px' }, html: icon('siren') + ' Siren yapılandırması (.json)', title: 'LED konumları, renkleri ve desenleri', onclick: () => VS.exportSirens() }),
             h('div', { class: 'card-note', style: { marginTop: '8px', fontSize: '10.5px', color: 'var(--dim)', lineHeight: '1.5' }, text: 'Boya yüzeyleri kutu izdüşümüyle UV alır; tasarım PNG’si bu UV’ye birebir oturur.' }))));
         body.append(h('div', { class: 'footer-brand', text: 'LEGENDS OF EMPIRE ROLEPLAY' }));
     }

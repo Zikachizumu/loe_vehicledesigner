@@ -88,15 +88,15 @@
     const n0 = sc.sirens[0].n;
     document.querySelector('#opts .sir-row .pw').click(); await wait(100);
     ok('LED kapat', S.mod.sirens.off[n0] === true && sc.sirens[0].k === 0);
-    VS.undo(); await wait(100); ok('LED kapatmayı geri al', !S.mod.sirens.off[n0] && sc.sirens[0].k === 1);
+    VS.undo(); await wait(100); ok('LED kapatmayı geri al', !S.mod.sirens.off[n0] && sc.sirens[0].off === false);
     const sl = sc.sirens.find(s => s.lens);
     S.mod.sirens.col[n0] = '#00ff66'; S.mod.sirens.col[sl.n] = '#00ff66'; VS.applySirens(); VS.commit(); await wait(100);
     ok('LED rengi (sprite + cam)', sc.sirens[0].color.getHexString() === new THREE.Color('#00ff66').getHexString() && sl.lens.emissive.getHexString() === sl.color.getHexString(), sc.sirens.filter(s => s.lens).length + ' camlı LED');
     VS.selectSiren(sc.sirens[2].n, true); await wait(150); ok('LED seç', S.siren.sel === sc.sirens[2].n && !!sc.sirenRing && sc.sirenRing.visible);
     const sp = sc.sirens[2].sprite.getWorldPosition(new THREE.Vector3()).project(sc.camera), rc = sc.renderer.domElement.getBoundingClientRect();
     ok('3B LED seçimi (en yakın)', sc.nearestSiren(rc.left + (sp.x * 0.5 + 0.5) * rc.width, rc.top + (-sp.y * 0.5 + 0.5) * rc.height, 20) === sc.sirens[2].n);
-    S.siren.play = true; VS.syncSirenMode(); const ks = new Set(); for (let i = 0; i < 40; i++) { await wait(45); sc.updateSirens(); ks.add(sc.sirens.map(s => s.k.toFixed(1)).join('')); }
-    ok('yanıp sönme deseni değişiyor', ks.size > 2, ks.size + ' farklı durum');
+    S.siren.play = true; VS.syncSirenMode(); const ks = new Set(), tk0 = performance.now(); for (let i = 0; i < 60; i++) { await wait(45); sc.updateSirens(); ks.add(sc.sirens.map(s => s.k.toFixed(1)).join('')); }
+    ok('yanıp sönme deseni değişiyor', ks.size > 2, ks.size + ' farklı durum, ' + Math.round(performance.now() - tk0) + ' ms, play=' + sc.sirenPlay + ' kapalı=' + sc.sirens.filter(s => s.off).length);
     S.siren.play = false; VS.syncSirenMode();
     const projS = JSON.stringify(VS.project(false)); ok('proje siren ayarını içeriyor', projS.includes('"sirens"') && projS.includes('#00ff66'));
     S.dirty = false; await VS.loadProjectText(projS); await wait(500);
@@ -110,6 +110,42 @@
     }
     ok('tüm siren araçları yüklendi', !bad.length && tot.length >= 30, tot.length + ' araç ' + bad.join(','));
     VS.tools.set('select');
+
+    // siren kiti: başka araca (Adder) tak
+    S.mod.sirens = { off: {}, col: {} }; await VS.loadVehicle('adder'); await wait(500);
+    VS.tools.set('sirens'); S.siren.kitSrc = 'police4'; S.siren.tab = 'kit'; VS.tools.renderOpts(); await wait(150);
+    ok('Adder\'da yerel LED yok', sc.sirens.length === 0 && !S.mod.sirenKit);
+    document.querySelector('#opts .btn.pri').click(); await wait(500);
+    const kit = S.mod.sirenKit, bbA = sc.bbox;
+    ok('kit takıldı (16 LED)', kit && kit.leds.length === 16 && sc.sirens.length === 16 && sc.sirens.every(s => s.kit), kit && kit.leds.length + ' LED');
+    ok('kit LED\'leri araç sınırlarında', kit.leds.every(r => r.p[0] > bbA.min[0] - 0.3 && r.p[0] < bbA.max[0] + 0.3 && r.p[1] > bbA.min[1] - 0.3 && r.p[1] < bbA.max[1] + 0.3 && r.p[2] > bbA.min[2] && r.p[2] < bbA.max[2] + 0.3));
+    const roofZ = kit.leds.filter(r => r.zone === 'roof').map(r => r.p[2]);
+    ok('tavan LED\'leri tavanın üstünde', roofZ.length >= 4 && Math.min(...roofZ) > bbA.min[2] + 0.6 * (bbA.max[2] - bbA.min[2]), roofZ.length + ' tavan LED, z>=' + Math.min(...roofZ).toFixed(2));
+    ok('kit gövdesi oluştu', !!sc.kitHousing && !!sc.kitHousing.roof);
+    const rs = sc.sirens.find(s => s.zone === 'roof'), y0 = rs.sprite.position.y;
+    kit.zo.roof[1] = 0.1; VS.applySirens(); ok('bölge kaydırma (Y +0.1)', Math.abs(rs.sprite.position.y - y0 - 0.1) < 1e-4);
+    kit.lo[rs.n] = [0.05, 0, 0]; VS.applySirens(); ok('LED kaydırma (X +0.05)', Math.abs(rs.mesh.position.x - (rs.rec.p[0] + 0.05)) < 1e-4);
+    S.mod.sirens.col[rs.n] = '#00ff66'; VS.applySirens(); ok('kit LED rengi', rs.lens.emissive.getHexString() === new THREE.Color('#00ff66').getHexString());
+    VS.selectSiren(rs.n, false); ok('kit LED seç', !!sc.sirenRing && sc.sirenRing.visible && sc.sirenRing.position.distanceTo(rs.sprite.position) < 1e-6);
+    const kp = rs.sprite.getWorldPosition(new THREE.Vector3()).project(sc.camera), rk = sc.renderer.domElement.getBoundingClientRect();
+    ok('3B kit LED seçimi', sc.nearestSiren(rk.left + (kp.x * 0.5 + 0.5) * rk.width, rk.top + (-kp.y * 0.5 + 0.5) * rk.height, 22) === rs.n);
+    VS.commit();
+    const projK = JSON.stringify(VS.project(false)); ok('proje kit içeriyor', projK.includes('"sirenKit"') && projK.includes('"zo"'));
+    S.dirty = false; await VS.loadProjectText(projK); await wait(500);
+    ok('kit proje ile geri yüklendi', S.veh.id === 'adder' && S.mod.sirenKit && sc.sirens.length === 16 && Math.abs(sc.sirens.find(s => s.n === rs.n).sprite.position.y - y0 - 0.1) < 1e-4);
+    S.siren.play = true; VS.syncSirenMode(); const kk = new Set(); for (let i = 0; i < 30; i++) { await wait(45); sc.updateSirens(); kk.add(sc.sirens.map(s => s.k.toFixed(1)).join('')); }
+    ok('kit LED\'leri yanıp sönüyor', kk.size > 2, kk.size + ' durum'); S.siren.play = false; VS.syncSirenMode();
+    const saved0 = Object.keys(saved).length; await VS.exportSirens(); const sj = Object.keys(saved).find(k => k.endsWith('_sirenler.json'));
+    ok('siren yapılandırması (.json)', !!sj && Object.keys(saved).length > saved0, sj);
+    if (sj) { const jj = JSON.parse(await saved[sj].text()); ok('json içeriği', jj.type === 'siren-config' && jj.kit && jj.kit.leds.length === 16 && jj.kit.leds[0].position.length === 3, jj.vehicle + ' / ' + jj.kit.leds.length); }
+    const nb = S.mod.sirenKit.leds.length; S.siren.tab = 'led'; VS.selectSiren(S.mod.sirenKit.leds[0].n, false); await wait(100);
+    const delBtn = Array.from(document.querySelectorAll('#opts .sir-edit .btn.dan')).pop(); if (delBtn) { delBtn.click(); await wait(200); }
+    ok('kit LED sil', S.mod.sirenKit && S.mod.sirenKit.leds.length === nb - 1 && sc.sirens.length === nb - 1, (S.mod.sirenKit && S.mod.sirenKit.leds.length) + '/' + nb);
+    VS.undo(); await wait(200); ok('LED silmeyi geri al', S.mod.sirenKit && S.mod.sirenKit.leds.length === nb && sc.sirens.length === nb);
+    await VS.loadVehicle('jester'); await wait(400); ok('araç değişince kit sıfırlanır', !S.mod.sirenKit && sc.sirens.length === 0);
+    S.siren.kitSrc = 'police'; S.siren.zones = { roof: true, front: false, rear: false }; S.siren.tab = 'kit'; VS.tools.renderOpts(); document.querySelector('#opts .btn.pri').click(); await wait(400);
+    ok('yalnız tavan bölgesi tak', S.mod.sirenKit && S.mod.sirenKit.leds.every(r => r.zone === 'roof') && sc.sirens.length > 5, sc.sirens.length + ' LED');
+    S.siren.zones = { roof: true, front: true, rear: true }; VS.tools.set('select');
 
     // farklı araç türleri
     const kinds = ['akuma', 'maverick', 'luxor', 'dinghy', 'hauler', 'rhino', 'firetruk', 'bus', 'arbitergt', 'jester', 'alpha', 'astron2'];

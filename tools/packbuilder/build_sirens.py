@@ -109,8 +109,7 @@ def main():
     missing = sorted(s for s in used if s not in sets)
     sets = {k: v for k, v in sets.items() if k in used and v['L']}
     veh = {m: s for m, s in veh.items() if s in sets}
-    json.dump({'v': 1, 'sets': sets, 'veh': veh}, open(out, 'w', encoding='utf-8'), separators=(',', ':'), ensure_ascii=False)
-    print('siren seti: %d  araç: %d  çakışan id: %d  eksik set: %s  -> %s (%d bayt)' % (len(sets), len(veh), dup, missing, out, os.path.getsize(out)))
+    kits = {}
     if lvm:
         tot = 0
         rows = []
@@ -120,15 +119,24 @@ def main():
                 continue
             raw = gzip.open(f).read()
             hl = struct.unpack('<I', raw[4:8])[0]
-            names = {b['n'] for b in json.loads(raw[8:8 + hl])['bones']}
-            n = sum(1 for l in sets[sid]['L'] if 'siren%d' % l['n'] in names)
-            if n:
+            hd = json.loads(raw[8:8 + hl])
+            pos = {b['n']: b['t'] for b in hd['bones']}
+            pm = {}
+            for l in sets[sid]['L']:
+                q = pos.get('siren%d' % l['n'])
+                if q:
+                    pm[str(l['n'])] = [round(q[0], 4), round(q[1], 4), round(q[2], 4)]
+            if pm:
+                bb = hd['bbox']
+                kits[m] = {'s': sid, 'bb': [bb['min'], bb['max']], 'p': pm}
                 tot += 1
-                rows.append((m, sets[sid]['n'], n))
+                rows.append((m, sets[sid]['n'], len(pm)))
         print('modelde siren kemiği bulunan araç:', tot)
         for m, nm, n in rows:
             if re.match(r'(police|polic|sheriff|fbi|riot|pol|pranger|lguard|ambulance|firetruk)', m):
                 print('  %-14s %-26s %2d LED' % (m, nm, n))
+    json.dump({'v': 2, 'sets': sets, 'veh': veh, 'kits': kits}, open(out, 'w', encoding='utf-8'), separators=(',', ':'), ensure_ascii=False)
+    print('siren seti: %d  araç: %d  kit: %d  çakışan id: %d  eksik set: %s  -> %s (%d bayt)' % (len(sets), len(veh), len(kits), dup, missing, out, os.path.getsize(out)))
 
 
 if __name__ == '__main__':
